@@ -8,7 +8,6 @@ import DashboardStats from '@/components/DashboardStats';
 import InvoiceModal from '@/components/InvoiceModal';
 import BackButton from '@/components/BackButton';
 import { useAuth } from '@/hooks/useAuth';
-import { LogOut } from 'lucide-react';
 
 const statusConfig = {
   pending: { label: 'Pendiente', icon: Clock, color: 'text-warning' },
