@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, ChefHat, Check, Receipt, FileText, QrCode, Home } from 'lucide-react';
-import { useOrdersStore } from '@/store/orderStore';
+import { useRealtimeOrders } from '@/hooks/useOrders';
 import type { Order } from '@/data/menu';
 import DashboardStats from '@/components/DashboardStats';
 import InvoiceModal from '@/components/InvoiceModal';
 import BackButton from '@/components/BackButton';
+import { useAuth } from '@/hooks/useAuth';
+import { LogOut } from 'lucide-react';
 
 const statusConfig = {
   pending: { label: 'Pendiente', icon: Clock, color: 'text-warning' },
@@ -19,7 +21,8 @@ const statusFlow: Order['status'][] = ['pending', 'preparing', 'served', 'paid']
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { orders, updateOrderStatus } = useOrdersStore();
+  const { orders, updateOrderStatus } = useRealtimeOrders();
+  const { signOut } = useAuth();
   const [filter, setFilter] = useState<Order['status'] | 'all'>('all');
   const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
 
