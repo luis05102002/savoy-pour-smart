@@ -8,7 +8,7 @@ const Cart = () => {
   const [open, setOpen] = useState(false);
   const { items, tableNumber, setTableNumber, updateQuantity, removeItem, clearCart, getTotal } = useCartStore();
   const addOrder = useOrdersStore((s) => s.addOrder);
-  const [tableInput, setTableInput] = useState('');
+  const [tableInput, setTableInput] = useState(tableNumber ? String(tableNumber) : '');
 
   const total = getTotal();
   const count = items.reduce((s, i) => s + i.quantity, 0);
