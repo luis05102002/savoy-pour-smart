@@ -8,35 +8,38 @@ import { toast } from 'sonner';
 const Cart = () => {
   const [open, setOpen] = useState(false);
   const { items, tableNumber, setTableNumber, updateQuantity, removeItem, clearCart, getTotal } = useCartStore();
-  const addOrder = useOrdersStore((s) => s.addOrder);
   const [tableInput, setTableInput] = useState(tableNumber ? String(tableNumber) : '');
+  const [sending, setSending] = useState(false);
 
   const total = getTotal();
   const count = items.reduce((s, i) => s + i.quantity, 0);
 
-  const handleOrder = () => {
+  const handleOrder = async () => {
     const table = tableNumber || parseInt(tableInput);
     if (!table || isNaN(table)) {
       toast.error('Introduce tu número de mesa');
       return;
     }
     setTableNumber(table);
+    setSending(true);
 
-    const order = {
-      id: Date.now().toString(),
-      tableNumber: table,
-      items: [...items],
-      status: 'pending' as const,
-      createdAt: new Date(),
-      total,
-    };
-    addOrder(order);
-    clearCart();
-    setTableInput('');
-    setOpen(false);
-    toast.success('Pedido enviado al bar', {
-      description: `Mesa ${table} · ${total.toFixed(2)}€`,
-    });
+    try {
+      await submitOrder({
+        tableNumber: table,
+        items: [...items],
+        total,
+      });
+      clearCart();
+      setTableInput('');
+      setOpen(false);
+      toast.success('Pedido enviado al bar', {
+        description: `Mesa ${table} · ${total.toFixed(2)}€`,
+      });
+    } catch {
+      toast.error('Error al enviar el pedido. Inténtalo de nuevo.');
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
