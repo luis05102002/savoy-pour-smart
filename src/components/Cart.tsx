@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, Minus, Plus, X, Send } from 'lucide-react';
-import { useCartStore, useOrdersStore } from '@/store/orderStore';
+import { useCartStore } from '@/store/orderStore';
+import { submitOrder } from '@/hooks/useOrders';
 import { toast } from 'sonner';
 
 const Cart = () => {
