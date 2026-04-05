@@ -14,8 +14,9 @@ interface CartState {
 
 interface OrdersState {
   orders: Order[];
+  setOrders: (orders: Order[]) => void;
   addOrder: (order: Order) => void;
-  updateOrderStatus: (orderId: string, status: Order['status']) => void;
+  updateOrderInStore: (orderId: string, status: Order['status']) => void;
 }
 
 export const useCartStore = create<CartState>((set, get) => ({
@@ -53,9 +54,10 @@ export const useCartStore = create<CartState>((set, get) => ({
 
 export const useOrdersStore = create<OrdersState>((set) => ({
   orders: [],
+  setOrders: (orders) => set({ orders }),
   addOrder: (order) =>
     set((state) => ({ orders: [order, ...state.orders] })),
-  updateOrderStatus: (orderId, status) =>
+  updateOrderInStore: (orderId, status) =>
     set((state) => ({
       orders: state.orders.map((o) =>
         o.id === orderId ? { ...o, status } : o
