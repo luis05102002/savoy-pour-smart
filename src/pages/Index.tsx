@@ -37,7 +37,7 @@ const Index = () => {
           Ver Carta
         </button>
         <button
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate('/login')}
           className="w-full px-8 py-4 rounded-lg border border-gold/40 text-gold font-display text-lg tracking-wider hover:bg-gold/10 transition-colors flex items-center justify-center gap-3"
         >
           <LayoutDashboard size={20} />
