@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, ChefHat, Check, Receipt, FileText, QrCode, Home } from 'lucide-react';
-import { useOrdersStore } from '@/store/orderStore';
+import { Clock, ChefHat, Check, Receipt, FileText, QrCode, LogOut } from 'lucide-react';
+import { useRealtimeOrders } from '@/hooks/useOrders';
 import type { Order } from '@/data/menu';
 import DashboardStats from '@/components/DashboardStats';
 import InvoiceModal from '@/components/InvoiceModal';
 import BackButton from '@/components/BackButton';
+import { useAuth } from '@/hooks/useAuth';
 
 const statusConfig = {
   pending: { label: 'Pendiente', icon: Clock, color: 'text-warning' },
@@ -19,7 +20,8 @@ const statusFlow: Order['status'][] = ['pending', 'preparing', 'served', 'paid']
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { orders, updateOrderStatus } = useOrdersStore();
+  const { orders, updateOrderStatus } = useRealtimeOrders();
+  const { signOut } = useAuth();
   const [filter, setFilter] = useState<Order['status'] | 'all'>('all');
   const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
 
@@ -50,6 +52,13 @@ const Dashboard = () => {
             >
               <QrCode size={16} />
               <span className="hidden sm:inline">QR Mesas</span>
+            </button>
+            <button
+              onClick={async () => { await signOut(); navigate('/login'); }}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-destructive/40 text-destructive text-sm hover:bg-destructive/10 transition-colors"
+            >
+              <LogOut size={16} />
+              <span className="hidden sm:inline">Salir</span>
             </button>
           </div>
         </div>

@@ -1,41 +1,45 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, Minus, Plus, X, Send } from 'lucide-react';
-import { useCartStore, useOrdersStore } from '@/store/orderStore';
+import { useCartStore } from '@/store/orderStore';
+import { submitOrder } from '@/hooks/useOrders';
 import { toast } from 'sonner';
 
 const Cart = () => {
   const [open, setOpen] = useState(false);
   const { items, tableNumber, setTableNumber, updateQuantity, removeItem, clearCart, getTotal } = useCartStore();
-  const addOrder = useOrdersStore((s) => s.addOrder);
   const [tableInput, setTableInput] = useState(tableNumber ? String(tableNumber) : '');
+  const [sending, setSending] = useState(false);
 
   const total = getTotal();
   const count = items.reduce((s, i) => s + i.quantity, 0);
 
-  const handleOrder = () => {
+  const handleOrder = async () => {
     const table = tableNumber || parseInt(tableInput);
     if (!table || isNaN(table)) {
       toast.error('Introduce tu número de mesa');
       return;
     }
     setTableNumber(table);
+    setSending(true);
 
-    const order = {
-      id: Date.now().toString(),
-      tableNumber: table,
-      items: [...items],
-      status: 'pending' as const,
-      createdAt: new Date(),
-      total,
-    };
-    addOrder(order);
-    clearCart();
-    setTableInput('');
-    setOpen(false);
-    toast.success('Pedido enviado al bar', {
-      description: `Mesa ${table} · ${total.toFixed(2)}€`,
-    });
+    try {
+      await submitOrder({
+        tableNumber: table,
+        items: [...items],
+        total,
+      });
+      clearCart();
+      setTableInput('');
+      setOpen(false);
+      toast.success('Pedido enviado al bar', {
+        description: `Mesa ${table} · ${total.toFixed(2)}€`,
+      });
+    } catch {
+      toast.error('Error al enviar el pedido. Inténtalo de nuevo.');
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -129,10 +133,17 @@ const Cart = () => {
                   </div>
                   <button
                     onClick={handleOrder}
-                    className="w-full py-4 rounded-lg gold-gradient text-primary-foreground font-display text-lg tracking-wider hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                    disabled={sending}
+                    className="w-full py-4 rounded-lg gold-gradient text-primary-foreground font-display text-lg tracking-wider hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
                   >
-                    <Send size={18} />
-                    Enviar Pedido
+                    {sending ? (
+                      <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <Send size={18} />
+                        Enviar Pedido
+                      </>
+                    )}
                   </button>
                 </div>
               )}
