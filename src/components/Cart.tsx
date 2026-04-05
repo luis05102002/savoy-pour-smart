@@ -133,10 +133,17 @@ const Cart = () => {
                   </div>
                   <button
                     onClick={handleOrder}
-                    className="w-full py-4 rounded-lg gold-gradient text-primary-foreground font-display text-lg tracking-wider hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                    disabled={sending}
+                    className="w-full py-4 rounded-lg gold-gradient text-primary-foreground font-display text-lg tracking-wider hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
                   >
-                    <Send size={18} />
-                    Enviar Pedido
+                    {sending ? (
+                      <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <Send size={18} />
+                        Enviar Pedido
+                      </>
+                    )}
                   </button>
                 </div>
               )}
