@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, ChefHat, Check, Receipt, FileText, QrCode, LogOut } from 'lucide-react';
+import { Clock, ChefHat, Check, Receipt, FileText, QrCode, LogOut, BarChart3, Wine, ClipboardList } from 'lucide-react';
 import { useRealtimeOrders } from '@/hooks/useOrders';
 import type { Order } from '@/data/menu';
 import DashboardStats from '@/components/DashboardStats';
+import SalesStats from '@/components/SalesStats';
+import MenuManager from '@/components/MenuManager';
 import InvoiceModal from '@/components/InvoiceModal';
 import BackButton from '@/components/BackButton';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,12 +20,15 @@ const statusConfig = {
 
 const statusFlow: Order['status'][] = ['pending', 'preparing', 'served', 'paid'];
 
+type Tab = 'orders' | 'stats' | 'menu';
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { orders, updateOrderStatus } = useRealtimeOrders();
   const { signOut } = useAuth();
   const [filter, setFilter] = useState<Order['status'] | 'all'>('all');
   const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
+  const [activeTab, setActiveTab] = useState<Tab>('orders');
 
   const filtered = filter === 'all' ? orders : orders.filter((o) => o.status === filter);
 
@@ -31,6 +36,12 @@ const Dashboard = () => {
     const idx = statusFlow.indexOf(current);
     return idx < statusFlow.length - 1 ? statusFlow[idx + 1] : null;
   };
+
+  const tabs: { id: Tab; label: string; icon: typeof ClipboardList }[] = [
+    { id: 'orders', label: 'Pedidos', icon: ClipboardList },
+    { id: 'stats', label: 'Estadísticas', icon: BarChart3 },
+    { id: 'menu', label: 'Carta', icon: Wine },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -65,113 +76,141 @@ const Dashboard = () => {
       </header>
 
       <div className="max-w-6xl mx-auto px-6 py-6">
-        {/* Stats */}
-        <DashboardStats orders={orders} />
-
-        {/* Filters */}
-        <div className="flex gap-2 mb-6 overflow-x-auto">
-          {(['all', ...statusFlow] as const).map((s) => {
-            const label = s === 'all' ? 'Todos' : statusConfig[s].label;
-            const count = s === 'all' ? orders.length : orders.filter((o) => o.status === s).length;
-            return (
-              <button
-                key={s}
-                onClick={() => setFilter(s)}
-                className={`shrink-0 px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-2 ${
-                  filter === s
-                    ? 'bg-gold text-primary-foreground'
-                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                }`}
-              >
-                {label}
-                <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                  filter === s ? 'bg-primary-foreground/20' : 'bg-muted'
-                }`}>
-                  {count}
-                </span>
-              </button>
-            );
-          })}
+        {/* Tabs */}
+        <div className="flex gap-1 mb-6 bg-secondary/50 rounded-xl p-1 w-fit">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all ${
+                activeTab === tab.id
+                  ? 'bg-gold text-primary-foreground font-medium'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <tab.icon size={16} />
+              {tab.label}
+            </button>
+          ))}
         </div>
 
-        {/* Orders grid */}
-        {filtered.length === 0 ? (
-          <div className="text-center py-20 text-muted-foreground">
-            <Clock size={48} className="mx-auto mb-4 opacity-30" />
-            <p className="font-display text-lg">Sin pedidos</p>
-            <p className="text-sm mt-1">Los pedidos aparecerán aquí en tiempo real</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <AnimatePresence>
-              {filtered.map((order) => {
-                const { label, icon: Icon, color } = statusConfig[order.status];
-                const next = nextStatus(order.status);
+        {/* Orders Tab */}
+        {activeTab === 'orders' && (
+          <>
+            <DashboardStats orders={orders} />
 
+            {/* Filters */}
+            <div className="flex gap-2 mb-6 overflow-x-auto">
+              {(['all', ...statusFlow] as const).map((s) => {
+                const label = s === 'all' ? 'Todos' : statusConfig[s].label;
+                const count = s === 'all' ? orders.length : orders.filter((o) => o.status === s).length;
                 return (
-                  <motion.div
-                    key={order.id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    className="bg-card border border-border rounded-xl p-5 flex flex-col"
+                  <button
+                    key={s}
+                    onClick={() => setFilter(s)}
+                    className={`shrink-0 px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-2 ${
+                      filter === s
+                        ? 'bg-gold text-primary-foreground'
+                        : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                    }`}
                   >
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="font-display text-2xl text-gold">Mesa {order.tableNumber}</span>
-                      <span className={`flex items-center gap-1.5 text-sm ${color}`}>
-                        <Icon size={16} />
-                        {label}
-                      </span>
-                    </div>
-
-                    <div className="flex-1 space-y-2 mb-4">
-                      {order.items.map((item) => (
-                        <div key={item.menuItem.id} className="flex justify-between text-sm">
-                          <span className="text-foreground">
-                            {item.quantity}× {item.menuItem.name}
-                          </span>
-                          <span className="text-muted-foreground">
-                            {(item.menuItem.price * item.quantity).toFixed(2)}€
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="art-deco-line my-3" />
-
-                    <div className="flex justify-between items-center mb-4">
-                      <span className="text-xs text-muted-foreground">
-                        {order.createdAt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                      <span className="font-display text-xl text-gold">{order.total.toFixed(2)}€</span>
-                    </div>
-
-                    <div className="flex gap-2">
-                      {next && (
-                        <button
-                          onClick={() => updateOrderStatus(order.id, next)}
-                          className="flex-1 py-2.5 rounded-lg bg-gold text-primary-foreground font-medium text-sm hover:opacity-90 transition-opacity"
-                        >
-                          → {statusConfig[next].label}
-                        </button>
-                      )}
-                      {(order.status === 'served' || order.status === 'paid') && (
-                        <button
-                          onClick={() => setInvoiceOrder(order)}
-                          className="py-2.5 px-4 rounded-lg border border-gold/40 text-gold text-sm hover:bg-gold/10 transition-colors flex items-center gap-1.5"
-                        >
-                          <FileText size={14} />
-                          Factura
-                        </button>
-                      )}
-                    </div>
-                  </motion.div>
+                    {label}
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                      filter === s ? 'bg-primary-foreground/20' : 'bg-muted'
+                    }`}>
+                      {count}
+                    </span>
+                  </button>
                 );
               })}
-            </AnimatePresence>
-          </div>
+            </div>
+
+            {/* Orders grid */}
+            {filtered.length === 0 ? (
+              <div className="text-center py-20 text-muted-foreground">
+                <Clock size={48} className="mx-auto mb-4 opacity-30" />
+                <p className="font-display text-lg">Sin pedidos</p>
+                <p className="text-sm mt-1">Los pedidos aparecerán aquí en tiempo real</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <AnimatePresence>
+                  {filtered.map((order) => {
+                    const { label, icon: Icon, color } = statusConfig[order.status];
+                    const next = nextStatus(order.status);
+
+                    return (
+                      <motion.div
+                        key={order.id}
+                        layout
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="bg-card border border-border rounded-xl p-5 flex flex-col"
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="font-display text-2xl text-gold">Mesa {order.tableNumber}</span>
+                          <span className={`flex items-center gap-1.5 text-sm ${color}`}>
+                            <Icon size={16} />
+                            {label}
+                          </span>
+                        </div>
+
+                        <div className="flex-1 space-y-2 mb-4">
+                          {order.items.map((item) => (
+                            <div key={item.menuItem.id} className="flex justify-between text-sm">
+                              <span className="text-foreground">
+                                {item.quantity}× {item.menuItem.name}
+                              </span>
+                              <span className="text-muted-foreground">
+                                {(item.menuItem.price * item.quantity).toFixed(2)}€
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="art-deco-line my-3" />
+
+                        <div className="flex justify-between items-center mb-4">
+                          <span className="text-xs text-muted-foreground">
+                            {order.createdAt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          <span className="font-display text-xl text-gold">{order.total.toFixed(2)}€</span>
+                        </div>
+
+                        <div className="flex gap-2">
+                          {next && (
+                            <button
+                              onClick={() => updateOrderStatus(order.id, next)}
+                              className="flex-1 py-2.5 rounded-lg bg-gold text-primary-foreground font-medium text-sm hover:opacity-90 transition-opacity"
+                            >
+                              → {statusConfig[next].label}
+                            </button>
+                          )}
+                          {(order.status === 'served' || order.status === 'paid') && (
+                            <button
+                              onClick={() => setInvoiceOrder(order)}
+                              className="py-2.5 px-4 rounded-lg border border-gold/40 text-gold text-sm hover:bg-gold/10 transition-colors flex items-center gap-1.5"
+                            >
+                              <FileText size={14} />
+                              Factura
+                            </button>
+                          )}
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+            )}
+          </>
         )}
+
+        {/* Stats Tab */}
+        {activeTab === 'stats' && <SalesStats orders={orders} />}
+
+        {/* Menu Management Tab */}
+        {activeTab === 'menu' && <MenuManager />}
       </div>
 
       {/* Invoice Modal */}
