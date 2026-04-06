@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, Minus, Plus, X, Send } from 'lucide-react';
 import { useCartStore } from '@/store/orderStore';
 import { submitOrder } from '@/hooks/useOrders';
+import ClientInvoice from '@/components/ClientInvoice';
+import type { Order } from '@/data/menu';
 import { toast } from 'sonner';
 
 const Cart = () => {
@@ -10,6 +12,7 @@ const Cart = () => {
   const { items, tableNumber, setTableNumber, updateQuantity, removeItem, clearCart, getTotal } = useCartStore();
   const [tableInput, setTableInput] = useState(tableNumber ? String(tableNumber) : '');
   const [sending, setSending] = useState(false);
+  const [lastOrder, setLastOrder] = useState<Order | null>(null);
 
   const total = getTotal();
   const count = items.reduce((s, i) => s + i.quantity, 0);
@@ -24,17 +27,29 @@ const Cart = () => {
     setSending(true);
 
     try {
-      await submitOrder({
+      const data = await submitOrder({
         tableNumber: table,
         items: [...items],
         total,
       });
+
+      // Build order object for invoice
+      const order: Order = {
+        id: data.id,
+        tableNumber: table,
+        items: [...items],
+        status: 'pending',
+        createdAt: new Date(data.created_at),
+        total,
+      };
+
       clearCart();
       setTableInput('');
       setOpen(false);
       toast.success('Pedido enviado al bar', {
         description: `Mesa ${table} · ${total.toFixed(2)}€`,
       });
+      setLastOrder(order);
     } catch {
       toast.error('Error al enviar el pedido. Inténtalo de nuevo.');
     } finally {
@@ -149,6 +164,13 @@ const Cart = () => {
               )}
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* Client Invoice after order */}
+      <AnimatePresence>
+        {lastOrder && (
+          <ClientInvoice order={lastOrder} onClose={() => setLastOrder(null)} />
         )}
       </AnimatePresence>
     </>
