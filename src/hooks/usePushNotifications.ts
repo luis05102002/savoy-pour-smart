@@ -37,13 +37,11 @@ export const usePushNotifications = () => {
       swRegistration.showNotification(title, {
         body,
         icon: '/placeholder.svg',
-        vibrate: [200, 100, 200, 100, 200],
         tag: 'savoy-order',
         renotify: true,
         requireInteraction: true,
-      });
+      } as NotificationOptions);
     } else {
-      // Fallback to basic Notification API
       new Notification(title, { body, icon: '/placeholder.svg', tag: 'savoy-order' });
     }
   }, [permission, swRegistration]);
