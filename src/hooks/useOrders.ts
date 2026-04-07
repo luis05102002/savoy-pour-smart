@@ -52,7 +52,6 @@ export const useRealtimeOrders = () => {
   const { orders, setOrders, addOrder, updateOrderInStore } = useOrdersStore();
   const { sendLocalNotification, requestPermission, permission } = usePushNotifications();
   const initialLoadDone = useRef(false);
-  const initialLoadDone = useRef(false);
 
   // Play loud notification sound (triple beep)
   const playNotification = useCallback(() => {
