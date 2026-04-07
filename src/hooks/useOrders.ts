@@ -120,16 +120,13 @@ export const submitOrder = async (order: {
   items: OrderItem[];
   total: number;
 }) => {
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('orders')
     .insert({
       table_number: order.tableNumber,
       items: order.items as any,
       total: order.total,
-    })
-    .select()
-    .single();
+    });
 
   if (error) throw error;
-  return data;
 };
