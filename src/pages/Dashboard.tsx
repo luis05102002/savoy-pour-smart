@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, ChefHat, Check, Receipt, FileText, QrCode, LogOut, BarChart3, Wine, ClipboardList } from 'lucide-react';
+import { Clock, ChefHat, Check, Receipt, FileText, QrCode, LogOut, BarChart3, Wine, ClipboardList, History, Bell, BellOff } from 'lucide-react';
 import { useRealtimeOrders } from '@/hooks/useOrders';
 import type { Order } from '@/data/menu';
 import DashboardStats from '@/components/DashboardStats';
@@ -9,6 +9,7 @@ import SalesStats from '@/components/SalesStats';
 import MenuManager from '@/components/MenuManager';
 import InvoiceModal from '@/components/InvoiceModal';
 import BackButton from '@/components/BackButton';
+import TableHistory from '@/components/TableHistory';
 import { useAuth } from '@/hooks/useAuth';
 
 const statusConfig = {
@@ -20,11 +21,11 @@ const statusConfig = {
 
 const statusFlow: Order['status'][] = ['pending', 'preparing', 'served', 'paid'];
 
-type Tab = 'orders' | 'stats' | 'menu';
+type Tab = 'orders' | 'stats' | 'menu' | 'history';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { orders, updateOrderStatus } = useRealtimeOrders();
+  const { orders, updateOrderStatus, requestPermission, permission } = useRealtimeOrders();
   const { signOut } = useAuth();
   const [filter, setFilter] = useState<Order['status'] | 'all'>('all');
   const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
@@ -39,6 +40,7 @@ const Dashboard = () => {
 
   const tabs: { id: Tab; label: string; icon: typeof ClipboardList }[] = [
     { id: 'orders', label: 'Pedidos', icon: ClipboardList },
+    { id: 'history', label: 'Mesas', icon: History },
     { id: 'stats', label: 'Estadísticas', icon: BarChart3 },
     { id: 'menu', label: 'Carta', icon: Wine },
   ];
@@ -57,6 +59,18 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={requestPermission}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm transition-colors ${
+                permission === 'granted'
+                  ? 'border-success/40 text-success'
+                  : 'border-gold/40 text-gold hover:bg-gold/10'
+              }`}
+              title={permission === 'granted' ? 'Notificaciones activadas' : 'Activar notificaciones push'}
+            >
+              {permission === 'granted' ? <Bell size={16} /> : <BellOff size={16} />}
+              <span className="hidden sm:inline">{permission === 'granted' ? 'Push ON' : 'Push'}</span>
+            </button>
             <button
               onClick={() => navigate('/qr')}
               className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gold/40 text-gold text-sm hover:bg-gold/10 transition-colors"
@@ -208,6 +222,9 @@ const Dashboard = () => {
 
         {/* Stats Tab */}
         {activeTab === 'stats' && <SalesStats orders={orders} />}
+
+        {/* Table History Tab */}
+        {activeTab === 'history' && <TableHistory orders={orders} />}
 
         {/* Menu Management Tab */}
         {activeTab === 'menu' && <MenuManager />}
