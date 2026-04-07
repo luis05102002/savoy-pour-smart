@@ -224,7 +224,16 @@ const Dashboard = () => {
         {activeTab === 'stats' && <SalesStats orders={orders} />}
 
         {/* Table History Tab */}
-        {activeTab === 'history' && <TableHistory orders={orders} />}
+        {activeTab === 'history' && (
+          <TableHistory
+            orders={orders}
+            onCloseTable={async (tableNumber, orderIds) => {
+              for (const id of orderIds) {
+                await updateOrderStatus(id, 'paid');
+              }
+            }}
+          />
+        )}
 
         {/* Menu Management Tab */}
         {activeTab === 'menu' && <MenuManager />}
