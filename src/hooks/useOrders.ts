@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrdersStore } from '@/store/orderStore';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import type { OrderItem } from '@/data/menu';
 import { toast } from 'sonner';
 
@@ -49,6 +50,8 @@ const updateTabBadge = (pendingCount: number) => {
 
 export const useRealtimeOrders = () => {
   const { orders, setOrders, addOrder, updateOrderInStore } = useOrdersStore();
+  const { sendLocalNotification, requestPermission, permission } = usePushNotifications();
+  const initialLoadDone = useRef(false);
   const initialLoadDone = useRef(false);
 
   // Play loud notification sound (triple beep)
@@ -130,6 +133,10 @@ export const useRealtimeOrders = () => {
             addOrder(order);
             if (initialLoadDone.current) {
               playNotification();
+              sendLocalNotification(
+                `🍸 ¡NUEVO PEDIDO! · Mesa ${order.tableNumber}`,
+                `${order.items.length} artículo(s) · ${order.total.toFixed(2)}€`
+              );
               toast.success(`🍸 ¡NUEVO PEDIDO! · Mesa ${order.tableNumber}`, {
                 description: `${order.items.length} artículo(s) · ${order.total.toFixed(2)}€`,
                 duration: 15000,
@@ -166,7 +173,7 @@ export const useRealtimeOrders = () => {
     await supabase.from('orders').update({ status }).eq('id', orderId);
   };
 
-  return { orders, updateOrderStatus };
+  return { orders, updateOrderStatus, requestPermission, permission };
 };
 
 // Insert order from client side (no auth needed)
