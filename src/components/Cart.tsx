@@ -27,19 +27,19 @@ const Cart = () => {
     setSending(true);
 
     try {
-      const data = await submitOrder({
+      await submitOrder({
         tableNumber: table,
         items: [...items],
         total,
       });
 
-      // Build order object for invoice
+      // Build order object for invoice (local data, no DB read needed)
       const order: Order = {
-        id: data.id,
+        id: crypto.randomUUID(),
         tableNumber: table,
         items: [...items],
         status: 'pending',
-        createdAt: new Date(data.created_at),
+        createdAt: new Date(),
         total,
       };
 

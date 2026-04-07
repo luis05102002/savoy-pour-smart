@@ -4,30 +4,80 @@ import { useOrdersStore } from '@/store/orderStore';
 import type { OrderItem } from '@/data/menu';
 import { toast } from 'sonner';
 
+// Update browser tab title with pending orders count
+const updateTabBadge = (pendingCount: number) => {
+  const base = 'Savoy · Panel';
+  document.title = pendingCount > 0 ? `(${pendingCount}) 🔔 ${base}` : base;
+
+  // Update favicon with badge
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  // Base icon
+  ctx.fillStyle = '#1a1a2e';
+  ctx.beginPath();
+  ctx.arc(32, 32, 32, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#d4a843';
+  ctx.font = 'bold 28px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('S', 32, 34);
+
+  if (pendingCount > 0) {
+    // Red badge
+    ctx.fillStyle = '#ef4444';
+    ctx.beginPath();
+    ctx.arc(50, 14, 14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillText(pendingCount > 9 ? '9+' : String(pendingCount), 50, 16);
+  }
+
+  let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
+  if (!link) {
+    link = document.createElement('link');
+    link.rel = 'icon';
+    document.head.appendChild(link);
+  }
+  link.href = canvas.toDataURL();
+};
+
 export const useRealtimeOrders = () => {
   const { orders, setOrders, addOrder, updateOrderInStore } = useOrdersStore();
   const initialLoadDone = useRef(false);
-  const previousCount = useRef(0);
 
-  // Play notification sound
+  // Play loud notification sound (triple beep)
   const playNotification = useCallback(() => {
     try {
       const ctx = new AudioContext();
-      const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.connect(gain);
       gain.connect(ctx.destination);
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
-      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.2);
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.4);
+      gain.gain.setValueAtTime(0.5, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.2);
+
+      // Three ascending beeps
+      [0, 0.15, 0.3].forEach((delay, i) => {
+        const osc = ctx.createOscillator();
+        osc.connect(gain);
+        osc.frequency.setValueAtTime(800 + i * 200, ctx.currentTime + delay);
+        osc.start(ctx.currentTime + delay);
+        osc.stop(ctx.currentTime + delay + 0.12);
+      });
     } catch {
       // Audio not available
     }
   }, []);
+
+  // Update tab badge whenever orders change
+  useEffect(() => {
+    const pendingCount = orders.filter(o => o.status === 'pending').length;
+    updateTabBadge(pendingCount);
+  }, [orders]);
 
   // Fetch initial orders
   useEffect(() => {
@@ -51,7 +101,6 @@ export const useRealtimeOrders = () => {
           total: Number(o.total),
         }));
         setOrders(mapped);
-        previousCount.current = mapped.length;
         initialLoadDone.current = true;
       }
     };
@@ -76,15 +125,21 @@ export const useRealtimeOrders = () => {
             total: Number(o.total),
           };
           
-          // Check if already in store
           const exists = useOrdersStore.getState().orders.some(existing => existing.id === order.id);
           if (!exists) {
             addOrder(order);
             if (initialLoadDone.current) {
               playNotification();
-              toast.success(`🍸 Nuevo pedido · Mesa ${order.tableNumber}`, {
-                description: `${order.total.toFixed(2)}€`,
-                duration: 8000,
+              toast.success(`🍸 ¡NUEVO PEDIDO! · Mesa ${order.tableNumber}`, {
+                description: `${order.items.length} artículo(s) · ${order.total.toFixed(2)}€`,
+                duration: 15000,
+                style: {
+                  background: '#1a1a2e',
+                  border: '2px solid #d4a843',
+                  color: '#fff',
+                  fontSize: '16px',
+                  padding: '16px',
+                },
               });
             }
           }
@@ -120,16 +175,13 @@ export const submitOrder = async (order: {
   items: OrderItem[];
   total: number;
 }) => {
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('orders')
     .insert({
       table_number: order.tableNumber,
       items: order.items as any,
       total: order.total,
-    })
-    .select()
-    .single();
+    });
 
   if (error) throw error;
-  return data;
 };
