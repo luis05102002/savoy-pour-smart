@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { History, X, Clock, Receipt, CreditCard, Download } from 'lucide-react';
+import { History, X, Clock, Receipt, CreditCard, Download, Users } from 'lucide-react';
 import type { Order } from '@/data/menu';
+import SplitBill from '@/components/SplitBill';
 
 interface TableHistoryProps {
   orders: Order[];
@@ -11,6 +12,7 @@ interface TableHistoryProps {
 const TableHistory = ({ orders, onCloseTable }: TableHistoryProps) => {
   const [selectedTable, setSelectedTable] = useState<number | null>(null);
   const [showInvoice, setShowInvoice] = useState(false);
+  const [showSplitBill, setShowSplitBill] = useState(false);
 
   const tables = Array.from(new Set(orders.map(o => o.tableNumber))).sort((a, b) => a - b);
 
