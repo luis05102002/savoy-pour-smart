@@ -145,13 +145,22 @@ const TableHistory = ({ orders, onCloseTable }: TableHistoryProps) => {
 
             {/* Close table button */}
             {!allPaid && onCloseTable && (
-              <button
-                onClick={handleCloseTable}
-                className="w-full mb-4 py-3 rounded-lg bg-success text-primary-foreground font-medium text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
-              >
-                <CreditCard size={18} />
-                Cerrar cuenta · {(tableTotal - tablePaidTotal).toFixed(2)}€ pendiente
-              </button>
+              <div className="space-y-2 mb-4">
+                <button
+                  onClick={handleCloseTable}
+                  className="w-full py-3 rounded-lg bg-success text-primary-foreground font-medium text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                >
+                  <CreditCard size={18} />
+                  Cerrar cuenta · {(tableTotal - tablePaidTotal).toFixed(2)}€ pendiente
+                </button>
+                <button
+                  onClick={() => setShowSplitBill(true)}
+                  className="w-full py-3 rounded-lg border border-border text-foreground font-medium text-sm hover:bg-secondary/80 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Users size={18} />
+                  Dividir cuenta entre comensales
+                </button>
+              </div>
             )}
 
             {allPaid && (
