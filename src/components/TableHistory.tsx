@@ -289,6 +289,17 @@ const TableHistory = ({ orders, onCloseTable }: TableHistoryProps) => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Split Bill Modal */}
+      <AnimatePresence>
+        {showSplitBill && selectedTable !== null && (
+          <SplitBill
+            orders={tableOrders}
+            tableNumber={selectedTable}
+            onClose={() => setShowSplitBill(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
