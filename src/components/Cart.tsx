@@ -135,13 +135,20 @@ const Cart = () => {
 
               {items.length > 0 && (
                 <div className="p-6 border-t border-border space-y-4">
-                  <input
-                    type="number"
-                    placeholder="Nº de mesa"
-                    value={tableInput}
-                    onChange={(e) => setTableInput(e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground text-center font-display text-lg focus:outline-none focus:border-gold"
-                  />
+                  {tableNumber ? (
+                    <div className="w-full px-4 py-3 rounded-lg bg-gold/10 border border-gold/30 text-center">
+                      <span className="text-sm text-muted-foreground">Mesa </span>
+                      <span className="font-display text-lg text-gold">{tableNumber}</span>
+                    </div>
+                  ) : (
+                    <input
+                      type="number"
+                      placeholder="Nº de mesa"
+                      value={tableInput}
+                      onChange={(e) => setTableInput(e.target.value)}
+                      className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground text-center font-display text-lg focus:outline-none focus:border-gold"
+                    />
+                  )}
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Total</span>
                     <span className="font-display text-2xl text-gold">{total.toFixed(2)}€</span>
