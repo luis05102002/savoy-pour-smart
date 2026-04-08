@@ -10,25 +10,25 @@ import { toast } from 'sonner';
 const Cart = () => {
   const [open, setOpen] = useState(false);
   const { items, tableNumber, setTableNumber, updateQuantity, removeItem, clearCart, getTotal } = useCartStore();
-  const [tableInput, setTableInput] = useState(tableNumber ? String(tableNumber) : '');
+  const [tableInput, setTableInput] = useState('');
   const [sending, setSending] = useState(false);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
 
   const total = getTotal();
   const count = items.reduce((s, i) => s + i.quantity, 0);
+  const effectiveTable = tableNumber || parseInt(tableInput) || null;
 
   const handleOrder = async () => {
-    const table = tableNumber || parseInt(tableInput);
-    if (!table || isNaN(table)) {
+    if (!effectiveTable || isNaN(effectiveTable)) {
       toast.error('Introduce tu número de mesa');
       return;
     }
-    setTableNumber(table);
+    if (!tableNumber) setTableNumber(effectiveTable);
     setSending(true);
 
     try {
       await submitOrder({
-        tableNumber: table,
+        tableNumber: effectiveTable,
         items: [...items],
         total,
       });
@@ -36,7 +36,7 @@ const Cart = () => {
       // Build order object for invoice (local data, no DB read needed)
       const order: Order = {
         id: crypto.randomUUID(),
-        tableNumber: table,
+        tableNumber: effectiveTable,
         items: [...items],
         status: 'pending',
         createdAt: new Date(),
@@ -47,7 +47,7 @@ const Cart = () => {
       setTableInput('');
       setOpen(false);
       toast.success('Pedido enviado al bar', {
-        description: `Mesa ${table} · ${total.toFixed(2)}€`,
+        description: `Mesa ${effectiveTable} · ${total.toFixed(2)}€`,
       });
       setLastOrder(order);
     } catch {
