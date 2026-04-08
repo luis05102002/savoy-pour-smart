@@ -155,13 +155,22 @@ const TableHistory = ({ orders, onCloseTable }: TableHistoryProps) => {
             )}
 
             {allPaid && (
-              <button
-                onClick={() => setShowInvoice(true)}
-                className="w-full mb-4 py-3 rounded-lg border border-gold/40 text-gold font-medium text-sm hover:bg-gold/10 transition-colors flex items-center justify-center gap-2"
-              >
-                <Receipt size={18} />
-                Ver factura consolidada
-              </button>
+              <div className="space-y-2 mb-4">
+                <button
+                  onClick={() => setShowInvoice(true)}
+                  className="w-full py-3 rounded-lg border border-gold/40 text-gold font-medium text-sm hover:bg-gold/10 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Receipt size={18} />
+                  Ver factura consolidada
+                </button>
+                <button
+                  onClick={() => setShowSplitBill(true)}
+                  className="w-full py-3 rounded-lg border border-border text-foreground font-medium text-sm hover:bg-secondary/80 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Users size={18} />
+                  Dividir cuenta entre comensales
+                </button>
+              </div>
             )}
 
             <div className="art-deco-line mb-4" />
