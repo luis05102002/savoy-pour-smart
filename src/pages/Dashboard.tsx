@@ -8,6 +8,7 @@ import DashboardStats from '@/components/DashboardStats';
 import SalesStats from '@/components/SalesStats';
 import MenuManager from '@/components/MenuManager';
 import InvoiceModal from '@/components/InvoiceModal';
+import NewOrderAlert from '@/components/NewOrderAlert';
 import BackButton from '@/components/BackButton';
 import TableHistory from '@/components/TableHistory';
 import { useAuth } from '@/hooks/useAuth';
