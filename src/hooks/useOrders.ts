@@ -195,7 +195,7 @@ export const useRealtimeOrders = () => {
     await supabase.from('orders').update({ status }).eq('id', orderId);
   };
 
-  return { orders, updateOrderStatus, requestPermission, permission, refreshOrders: fetchOrders };
+  return { orders, updateOrderStatus, requestPermission, permission, refreshOrders: fetchOrders, newOrderAlert, dismissAlert: () => setNewOrderAlert(null) };
 };
 
 // Insert order from client side (no auth needed)
