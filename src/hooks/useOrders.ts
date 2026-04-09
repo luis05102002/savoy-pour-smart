@@ -53,23 +53,39 @@ export const useRealtimeOrders = () => {
   const { sendLocalNotification, requestPermission, permission } = usePushNotifications();
   const initialLoadDone = useRef(false);
 
-  // Play loud notification sound (triple beep)
+  // Play LOUD notification sound — double chime with vibration
   const playNotification = useCallback(() => {
     try {
       const ctx = new AudioContext();
       const gain = ctx.createGain();
       gain.connect(ctx.destination);
-      gain.gain.setValueAtTime(0.5, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.2);
+      gain.gain.setValueAtTime(0.8, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 2);
 
-      // Three ascending beeps
-      [0, 0.15, 0.3].forEach((delay, i) => {
+      // First chime: 3 ascending notes
+      [0, 0.12, 0.24].forEach((delay, i) => {
         const osc = ctx.createOscillator();
+        osc.type = 'sine';
         osc.connect(gain);
-        osc.frequency.setValueAtTime(800 + i * 200, ctx.currentTime + delay);
+        osc.frequency.setValueAtTime(660 + i * 220, ctx.currentTime + delay);
         osc.start(ctx.currentTime + delay);
-        osc.stop(ctx.currentTime + delay + 0.12);
+        osc.stop(ctx.currentTime + delay + 0.15);
       });
+
+      // Second chime (repeat after pause)
+      [0.6, 0.72, 0.84].forEach((delay, i) => {
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.connect(gain);
+        osc.frequency.setValueAtTime(660 + i * 220, ctx.currentTime + delay);
+        osc.start(ctx.currentTime + delay);
+        osc.stop(ctx.currentTime + delay + 0.15);
+      });
+
+      // Vibrate on mobile
+      if ('vibrate' in navigator) {
+        navigator.vibrate([200, 100, 200, 100, 300]);
+      }
     } catch {
       // Audio not available
     }
