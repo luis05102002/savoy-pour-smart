@@ -81,33 +81,34 @@ export const useRealtimeOrders = () => {
     updateTabBadge(pendingCount);
   }, [orders]);
 
+  const fetchOrders = useCallback(async () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .gte('created_at', today.toISOString())
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      const mapped = data.map((o) => ({
+        id: o.id,
+        tableNumber: o.table_number,
+        items: o.items as unknown as OrderItem[],
+        status: o.status as 'pending' | 'preparing' | 'served' | 'paid',
+        createdAt: new Date(o.created_at),
+        total: Number(o.total),
+      }));
+      setOrders(mapped);
+      initialLoadDone.current = true;
+    }
+  }, [setOrders]);
+
   // Fetch initial orders
   useEffect(() => {
-    const fetchOrders = async () => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .gte('created_at', today.toISOString())
-        .order('created_at', { ascending: false });
-
-      if (!error && data) {
-        const mapped = data.map((o) => ({
-          id: o.id,
-          tableNumber: o.table_number,
-          items: o.items as unknown as OrderItem[],
-          status: o.status as 'pending' | 'preparing' | 'served' | 'paid',
-          createdAt: new Date(o.created_at),
-          total: Number(o.total),
-        }));
-        setOrders(mapped);
-        initialLoadDone.current = true;
-      }
-    };
     fetchOrders();
-  }, [setOrders]);
+  }, [fetchOrders]);
 
   // Realtime subscription
   useEffect(() => {
@@ -172,7 +173,7 @@ export const useRealtimeOrders = () => {
     await supabase.from('orders').update({ status }).eq('id', orderId);
   };
 
-  return { orders, updateOrderStatus, requestPermission, permission };
+  return { orders, updateOrderStatus, requestPermission, permission, refreshOrders: fetchOrders };
 };
 
 // Insert order from client side (no auth needed)
