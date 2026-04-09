@@ -26,7 +26,7 @@ type Tab = 'orders' | 'stats' | 'menu' | 'history';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { orders, updateOrderStatus, requestPermission, permission, refreshOrders } = useRealtimeOrders();
+  const { orders, updateOrderStatus, requestPermission, permission, refreshOrders, newOrderAlert, dismissAlert } = useRealtimeOrders();
   const { signOut } = useAuth();
   const [filter, setFilter] = useState<Order['status'] | 'all'>('all');
   const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
