@@ -150,6 +150,11 @@ export const useRealtimeOrders = () => {
             addOrder(order);
             if (initialLoadDone.current) {
               playNotification();
+              setNewOrderAlert({
+                tableNumber: order.tableNumber,
+                total: order.total,
+                itemCount: order.items.length,
+              });
               sendLocalNotification(
                 `🍸 ¡NUEVO PEDIDO! · Mesa ${order.tableNumber}`,
                 `${order.items.length} artículo(s) · ${order.total.toFixed(2)}€`
