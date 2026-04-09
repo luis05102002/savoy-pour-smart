@@ -25,7 +25,7 @@ type Tab = 'orders' | 'stats' | 'menu' | 'history';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { orders, updateOrderStatus, requestPermission, permission } = useRealtimeOrders();
+  const { orders, updateOrderStatus, requestPermission, permission, refreshOrders } = useRealtimeOrders();
   const { signOut } = useAuth();
   const [filter, setFilter] = useState<Order['status'] | 'all'>('all');
   const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
@@ -58,7 +58,15 @@ const Dashboard = () => {
               <p className="text-muted-foreground text-xs tracking-wider">Panel de Gestión</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { refreshOrders(); }}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-muted-foreground text-sm hover:text-foreground hover:border-gold/40 transition-colors"
+              title="Actualizar pedidos"
+            >
+              <RefreshCw size={16} />
+              <span className="hidden sm:inline">Actualizar</span>
+            </button>
             <button
               onClick={requestPermission}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm transition-colors ${
@@ -86,7 +94,6 @@ const Dashboard = () => {
               <span className="hidden sm:inline">Salir</span>
             </button>
           </div>
-        </div>
       </header>
 
       <div className="max-w-6xl mx-auto px-6 py-6">
