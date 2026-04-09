@@ -52,6 +52,7 @@ export const useRealtimeOrders = () => {
   const { orders, setOrders, addOrder, updateOrderInStore } = useOrdersStore();
   const { sendLocalNotification, requestPermission, permission } = usePushNotifications();
   const initialLoadDone = useRef(false);
+  const [newOrderAlert, setNewOrderAlert] = useState<{ tableNumber: number; total: number; itemCount: number } | null>(null);
 
   // Play LOUD notification sound — double chime with vibration
   const playNotification = useCallback(() => {
