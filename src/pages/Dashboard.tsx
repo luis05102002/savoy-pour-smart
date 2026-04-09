@@ -8,6 +8,7 @@ import DashboardStats from '@/components/DashboardStats';
 import SalesStats from '@/components/SalesStats';
 import MenuManager from '@/components/MenuManager';
 import InvoiceModal from '@/components/InvoiceModal';
+import NewOrderAlert from '@/components/NewOrderAlert';
 import BackButton from '@/components/BackButton';
 import TableHistory from '@/components/TableHistory';
 import { useAuth } from '@/hooks/useAuth';
@@ -25,7 +26,7 @@ type Tab = 'orders' | 'stats' | 'menu' | 'history';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { orders, updateOrderStatus, requestPermission, permission, refreshOrders } = useRealtimeOrders();
+  const { orders, updateOrderStatus, requestPermission, permission, refreshOrders, newOrderAlert, dismissAlert } = useRealtimeOrders();
   const { signOut } = useAuth();
   const [filter, setFilter] = useState<Order['status'] | 'all'>('all');
   const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
@@ -47,6 +48,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <NewOrderAlert order={newOrderAlert} onDismiss={dismissAlert} />
       <header className="border-b border-border bg-card">
         <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
