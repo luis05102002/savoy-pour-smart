@@ -16,7 +16,6 @@ const Cart = () => {
 
   const total = getTotal();
   const count = items.reduce((s, i) => s + i.quantity, 0);
-  const effectiveTable = tableNumber || parseInt(tableInput) || null;
 
   const handleOrder = async () => {
     if (!effectiveTable || isNaN(effectiveTable)) {
