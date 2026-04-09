@@ -27,15 +27,25 @@ const MenuCategory = ({ category, items }: MenuCategoryProps) => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="flex items-start justify-between gap-4 p-4 rounded-lg bg-card border border-border/50 hover:border-gold/30 transition-colors group"
+            className="flex items-start gap-3 p-3 rounded-lg bg-card border border-border/50 hover:border-gold/30 transition-colors group"
           >
+            {item.image_url && (
+              <img
+                src={item.image_url}
+                alt={item.name}
+                loading="lazy"
+                width={80}
+                height={80}
+                className="w-20 h-20 rounded-lg object-cover shrink-0"
+              />
+            )}
             <div className="flex-1 min-w-0">
-              <h3 className="font-display text-lg text-foreground">{item.name}</h3>
-              <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+              <h3 className="font-display text-base text-foreground">{item.name}</h3>
+              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">
                 {item.description}
               </p>
             </div>
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-2 shrink-0 self-center">
               <span className="font-display text-lg text-gold">{item.price}€</span>
               <button
                 onClick={() => addItem(item)}

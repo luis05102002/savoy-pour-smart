@@ -21,6 +21,7 @@ const toMenuItem = (db: DbMenuItem): MenuItem => ({
   price: Number(db.price),
   category: db.category,
   image: db.image_url ?? undefined,
+  image_url: db.image_url,
 });
 
 export const useMenuItems = () => {
