@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { ScanLine } from 'lucide-react';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import MenuCategory from '@/components/MenuCategory';
 import Cart from '@/components/Cart';
@@ -47,12 +48,22 @@ const Menu = () => {
             >
               Savoy
             </motion.h1>
-            <div className="w-16 text-right">
+            <div className="flex items-center gap-2">
               {tableFromUrl && (
                 <span className="text-xs px-2 py-1 rounded-full bg-gold/10 text-gold border border-gold/20">
                   Mesa {tableFromUrl}
                 </span>
               )}
+              <button
+                onClick={() => {
+                  // Open camera to scan QR — redirect to base URL so user can scan a new table QR
+                  window.location.href = window.location.origin + '/menu';
+                }}
+                className="w-8 h-8 rounded-full border border-gold/30 flex items-center justify-center text-gold hover:bg-gold/10 transition-colors"
+                title="Escanear otra mesa"
+              >
+                <ScanLine size={16} />
+              </button>
             </div>
           </div>
         </div>
