@@ -48,6 +48,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <NewOrderAlert order={newOrderAlert} onDismiss={dismissAlert} />
       <header className="border-b border-border bg-card">
         <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
