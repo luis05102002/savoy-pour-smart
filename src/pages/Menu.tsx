@@ -1,18 +1,22 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ScanLine } from 'lucide-react';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import MenuCategory from '@/components/MenuCategory';
 import Cart from '@/components/Cart';
 import BackButton from '@/components/BackButton';
+import QRScanner from '@/components/QRScanner';
 import { useCartStore } from '@/store/orderStore';
 
 const Menu = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const setTableNumber = useCartStore((s) => s.setTableNumber);
+  const tableNumber = useCartStore((s) => s.tableNumber);
   const { menuItems, categories, isLoading } = useMenuItems();
+  const [showScanner, setShowScanner] = useState(false);
 
   useEffect(() => {
     const mesa = searchParams.get('mesa');
@@ -33,7 +37,11 @@ const Menu = () => {
       .filter((g) => g.items.length > 0);
   }, [filteredItems, categories, activeCategory]);
 
-  const tableFromUrl = searchParams.get('mesa');
+  const handleQRScan = (mesa: number) => {
+    setShowScanner(false);
+    setTableNumber(mesa);
+    navigate(`/menu?mesa=${mesa}`, { replace: true });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -49,18 +57,15 @@ const Menu = () => {
               Savoy
             </motion.h1>
             <div className="flex items-center gap-2">
-              {tableFromUrl && (
+              {tableNumber && (
                 <span className="text-xs px-2 py-1 rounded-full bg-gold/10 text-gold border border-gold/20">
-                  Mesa {tableFromUrl}
+                  Mesa {tableNumber}
                 </span>
               )}
               <button
-                onClick={() => {
-                  // Open camera to scan QR — redirect to base URL so user can scan a new table QR
-                  window.location.href = window.location.origin + '/menu';
-                }}
+                onClick={() => setShowScanner(true)}
                 className="w-8 h-8 rounded-full border border-gold/30 flex items-center justify-center text-gold hover:bg-gold/10 transition-colors"
-                title="Escanear otra mesa"
+                title="Escanear QR de mesa"
               >
                 <ScanLine size={16} />
               </button>
@@ -105,6 +110,13 @@ const Menu = () => {
       </main>
 
       <Cart />
+
+      {/* QR Camera Scanner */}
+      <AnimatePresence>
+        {showScanner && (
+          <QRScanner onScan={handleQRScan} onClose={() => setShowScanner(false)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
