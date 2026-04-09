@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Minus, Plus, X, Send } from 'lucide-react';
+import { ShoppingBag, Minus, Plus, X, Send, QrCode } from 'lucide-react';
 import { useCartStore } from '@/store/orderStore';
 import { submitOrder } from '@/hooks/useOrders';
 import ClientInvoice from '@/components/ClientInvoice';
@@ -9,34 +9,30 @@ import { toast } from 'sonner';
 
 const Cart = () => {
   const [open, setOpen] = useState(false);
-  const { items, tableNumber, setTableNumber, updateQuantity, removeItem, clearCart, getTotal } = useCartStore();
-  const [tableInput, setTableInput] = useState('');
+  const { items, tableNumber, updateQuantity, removeItem, clearCart, getTotal } = useCartStore();
   const [sending, setSending] = useState(false);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
 
   const total = getTotal();
   const count = items.reduce((s, i) => s + i.quantity, 0);
-  const effectiveTable = tableNumber || parseInt(tableInput) || null;
 
   const handleOrder = async () => {
-    if (!effectiveTable || isNaN(effectiveTable)) {
-      toast.error('Introduce tu número de mesa');
+    if (!tableNumber) {
+      toast.error('Escanea el QR de tu mesa para poder pedir');
       return;
     }
-    if (!tableNumber) setTableNumber(effectiveTable);
     setSending(true);
 
     try {
       await submitOrder({
-        tableNumber: effectiveTable,
+        tableNumber,
         items: [...items],
         total,
       });
 
-      // Build order object for invoice (local data, no DB read needed)
       const order: Order = {
         id: crypto.randomUUID(),
-        tableNumber: effectiveTable,
+        tableNumber,
         items: [...items],
         status: 'pending',
         createdAt: new Date(),
@@ -44,10 +40,9 @@ const Cart = () => {
       };
 
       clearCart();
-      setTableInput('');
       setOpen(false);
       toast.success('Pedido enviado al bar', {
-        description: `Mesa ${effectiveTable} · ${total.toFixed(2)}€`,
+        description: `Mesa ${tableNumber} · ${total.toFixed(2)}€`,
       });
       setLastOrder(order);
     } catch {
@@ -141,13 +136,11 @@ const Cart = () => {
                       <span className="font-display text-lg text-gold">{tableNumber}</span>
                     </div>
                   ) : (
-                    <input
-                      type="number"
-                      placeholder="Nº de mesa"
-                      value={tableInput}
-                      onChange={(e) => setTableInput(e.target.value)}
-                      className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground text-center font-display text-lg focus:outline-none focus:border-gold"
-                    />
+                    <div className="w-full px-4 py-4 rounded-lg bg-destructive/10 border border-destructive/30 text-center space-y-2">
+                      <QrCode size={28} className="mx-auto text-destructive" />
+                      <p className="text-sm text-destructive font-medium">Escanea el QR de tu mesa</p>
+                      <p className="text-xs text-muted-foreground">Necesitas escanear el código QR de tu mesa para poder hacer un pedido</p>
+                    </div>
                   )}
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Total</span>
@@ -155,7 +148,7 @@ const Cart = () => {
                   </div>
                   <button
                     onClick={handleOrder}
-                    disabled={sending}
+                    disabled={sending || !tableNumber}
                     className="w-full py-4 rounded-lg gold-gradient text-primary-foreground font-display text-lg tracking-wider hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {sending ? (
