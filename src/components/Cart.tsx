@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Minus, Plus, X, Send, QrCode } from 'lucide-react';
+import { ShoppingBag, Minus, Plus, X, Send, QrCode, MessageSquare } from 'lucide-react';
 import { useCartStore } from '@/store/orderStore';
 import { submitOrder } from '@/hooks/useOrders';
 import ClientInvoice from '@/components/ClientInvoice';
@@ -9,9 +9,10 @@ import { toast } from 'sonner';
 
 const Cart = () => {
   const [open, setOpen] = useState(false);
-  const { items, tableNumber, updateQuantity, removeItem, clearCart, getTotal } = useCartStore();
+  const { items, tableNumber, updateQuantity, removeItem, clearCart, getTotal, updateNotes } = useCartStore();
   const [sending, setSending] = useState(false);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
+  const [editingNotes, setEditingNotes] = useState<string | null>(null);
 
   const total = getTotal();
   const count = items.reduce((s, i) => s + i.quantity, 0);
@@ -24,30 +25,32 @@ const Cart = () => {
     setSending(true);
 
     try {
-      await submitOrder({
+      const result = await submitOrder({
         tableNumber,
-        items: [...items],
-        total,
+        items: items.map((i) => ({
+          menuItemId: i.menuItem.id,
+          quantity: i.quantity,
+          notes: i.notes,
+        })),
       });
 
       const order: Order = {
-        id: crypto.randomUUID(),
+        id: result.id,
         tableNumber,
-        items: [...items],
+        items: result.items,
         status: 'pending',
-        createdAt: new Date(),
-        total,
+        createdAt: new Date(result.createdAt),
+        total: result.total,
       };
 
       clearCart();
-      // Keep drawer open briefly to show success, then close
       setOpen(false);
       toast.success('Pedido enviado al bar', {
-        description: `Mesa ${tableNumber} · ${total.toFixed(2)}€`,
+        description: `Mesa ${tableNumber} · ${result.total.toFixed(2)}€`,
       });
       setLastOrder(order);
-    } catch {
-      toast.error('Error al enviar el pedido. Inténtalo de nuevo.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Error al enviar el pedido. Inténtalo de nuevo.');
     } finally {
       setSending(false);
     }
@@ -98,32 +101,66 @@ const Cart = () => {
                   <p className="text-center text-muted-foreground py-12">Tu carrito está vacío</p>
                 ) : (
                   items.map((item) => (
-                    <div key={item.menuItem.id} className="flex items-center gap-4 p-3 rounded-lg bg-secondary/50">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-display text-foreground truncate">{item.menuItem.name}</p>
-                        <p className="text-sm text-gold">{item.menuItem.price}€</p>
+                    <div key={item.menuItem.id} className="p-3 rounded-lg bg-secondary/50 space-y-2">
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-display text-foreground truncate">{item.menuItem.name}</p>
+                          <p className="text-sm text-gold">{item.menuItem.price}€</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => updateQuantity(item.menuItem.id, item.quantity - 1)}
+                            className="w-7 h-7 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground"
+                          >
+                            <Minus size={14} />
+                          </button>
+                          <span className="w-6 text-center text-foreground font-medium">{item.quantity}</span>
+                          <button
+                            onClick={() => updateQuantity(item.menuItem.id, item.quantity + 1)}
+                            className="w-7 h-7 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground"
+                          >
+                            <Plus size={14} />
+                          </button>
+                          <button
+                            onClick={() => removeItem(item.menuItem.id)}
+                            className="ml-1 text-muted-foreground hover:text-destructive"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
+
+                      {/* Notes toggle */}
+                      {editingNotes === item.menuItem.id ? (
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            maxLength={200}
+                            placeholder="Sin hielo, doble, etc."
+                            defaultValue={item.notes || ''}
+                            autoFocus
+                            onBlur={(e) => {
+                              updateNotes(item.menuItem.id, e.target.value.trim());
+                              setEditingNotes(null);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                updateNotes(item.menuItem.id, (e.target as HTMLInputElement).value.trim());
+                                setEditingNotes(null);
+                              }
+                            }}
+                            className="flex-1 text-xs bg-background border border-border rounded-md px-2 py-1.5 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-gold/50"
+                          />
+                        </div>
+                      ) : (
                         <button
-                          onClick={() => updateQuantity(item.menuItem.id, item.quantity - 1)}
-                          className="w-7 h-7 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground"
+                          onClick={() => setEditingNotes(item.menuItem.id)}
+                          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-gold transition-colors"
                         >
-                          <Minus size={14} />
+                          <MessageSquare size={12} />
+                          {item.notes || 'Añadir nota'}
                         </button>
-                        <span className="w-6 text-center text-foreground font-medium">{item.quantity}</span>
-                        <button
-                          onClick={() => updateQuantity(item.menuItem.id, item.quantity + 1)}
-                          className="w-7 h-7 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground"
-                        >
-                          <Plus size={14} />
-                        </button>
-                        <button
-                          onClick={() => removeItem(item.menuItem.id)}
-                          className="ml-1 text-muted-foreground hover:text-destructive"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
+                      )}
                     </div>
                   ))
                 )}
