@@ -40,6 +40,7 @@ const Cart = () => {
       };
 
       clearCart();
+      // Keep drawer open briefly to show success, then close
       setOpen(false);
       toast.success('Pedido enviado al bar', {
         description: `Mesa ${tableNumber} · ${total.toFixed(2)}€`,

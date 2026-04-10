@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wine, LayoutDashboard, QrCode, ScanLine } from 'lucide-react';
+import { Wine, ScanLine } from 'lucide-react';
 import QRScanner from '@/components/QRScanner';
 
 const Index = () => {
@@ -46,19 +46,12 @@ const Index = () => {
           <Wine size={20} />
           Ver Carta
         </button>
+        {/* Staff-only subtle access — invisible to clients */}
         <button
           onClick={() => navigate('/login')}
-          className="w-full px-8 py-3 rounded-lg border border-border text-muted-foreground font-display tracking-wider hover:border-gold/40 hover:text-gold transition-colors flex items-center justify-center gap-3 text-sm"
+          className="mt-8 text-[10px] text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors tracking-widest uppercase"
         >
-          <LayoutDashboard size={18} />
-          Panel del Bar
-        </button>
-        <button
-          onClick={() => navigate('/qr')}
-          className="w-full px-8 py-3 rounded-lg border border-border text-muted-foreground font-display tracking-wider hover:border-gold/40 hover:text-gold transition-colors flex items-center justify-center gap-3 text-sm"
-        >
-          <QrCode size={18} />
-          Códigos QR por Mesa
+          Acceso personal
         </button>
       </motion.div>
 
