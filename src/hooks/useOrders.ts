@@ -198,19 +198,16 @@ export const useRealtimeOrders = () => {
   return { orders, updateOrderStatus, requestPermission, permission, refreshOrders: fetchOrders, newOrderAlert, dismissAlert: () => setNewOrderAlert(null) };
 };
 
-// Insert order from client side (no auth needed)
+// Submit order via edge function (server-side price validation)
 export const submitOrder = async (order: {
   tableNumber: number;
-  items: OrderItem[];
-  total: number;
-}) => {
-  const { error } = await supabase
-    .from('orders')
-    .insert({
-      table_number: order.tableNumber,
-      items: order.items as any,
-      total: order.total,
-    });
+  items: { menuItemId: string; quantity: number; notes?: string }[];
+}): Promise<{ id: string; createdAt: string; total: number; items: OrderItem[] }> => {
+  const { data, error } = await supabase.functions.invoke('create-order', {
+    body: order,
+  });
 
-  if (error) throw error;
+  if (error) throw new Error(error.message || 'Error al enviar el pedido');
+  if (data?.error) throw new Error(data.error);
+  return data;
 };
