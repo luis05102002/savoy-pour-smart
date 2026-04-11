@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wine, ScanLine } from 'lucide-react';
+import { Wine, ScanLine, CalendarDays } from 'lucide-react';
 import QRScanner from '@/components/QRScanner';
 
 const Index = () => {
@@ -61,6 +61,13 @@ const Index = () => {
         >
           <Wine size={20} />
           Ver Carta
+        </button>
+        <button
+          onClick={() => navigate('/reservar')}
+          className="w-full px-8 py-4 rounded-lg border border-gold/40 text-gold font-display text-lg tracking-wider hover:bg-gold/10 transition-colors flex items-center justify-center gap-3"
+        >
+          <CalendarDays size={20} />
+          Reservar Mesa
         </button>
       </motion.div>
 

@@ -10,6 +10,7 @@ import Menu from "./pages/Menu.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import Login from "./pages/Login.tsx";
 import QRCodes from "./pages/QRCodes.tsx";
+import Reservar from "./pages/Reservar.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/menu" element={<Menu />} />
+            <Route path="/reservar" element={<Reservar />} />
             <Route path="/login" element={<Login />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/qr" element={<ProtectedRoute><QRCodes /></ProtectedRoute>} />
