@@ -83,6 +83,57 @@ export type Database = {
         }
         Relationships: []
       }
+      reservations: {
+        Row: {
+          created_at: string
+          customer_email: string | null
+          customer_name: string
+          customer_notes: string | null
+          customer_phone: string
+          id: string
+          party_size: number
+          preferred_table: number | null
+          preferred_zone: Database["public"]["Enums"]["bar_zone"] | null
+          reservation_date: string
+          reservation_time: string
+          staff_notes: string | null
+          status: Database["public"]["Enums"]["reservation_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_email?: string | null
+          customer_name: string
+          customer_notes?: string | null
+          customer_phone: string
+          id?: string
+          party_size?: number
+          preferred_table?: number | null
+          preferred_zone?: Database["public"]["Enums"]["bar_zone"] | null
+          reservation_date: string
+          reservation_time: string
+          staff_notes?: string | null
+          status?: Database["public"]["Enums"]["reservation_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string
+          customer_notes?: string | null
+          customer_phone?: string
+          id?: string
+          party_size?: number
+          preferred_table?: number | null
+          preferred_zone?: Database["public"]["Enums"]["bar_zone"] | null
+          reservation_date?: string
+          reservation_time?: string
+          staff_notes?: string | null
+          status?: Database["public"]["Enums"]["reservation_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -116,6 +167,13 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "staff"
+      bar_zone: "barra" | "terraza" | "salon" | "privado"
+      reservation_status:
+        | "pending"
+        | "confirmed"
+        | "rejected"
+        | "completed"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -244,6 +302,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "staff"],
+      bar_zone: ["barra", "terraza", "salon", "privado"],
+      reservation_status: [
+        "pending",
+        "confirmed",
+        "rejected",
+        "completed",
+        "cancelled",
+      ],
     },
   },
 } as const
