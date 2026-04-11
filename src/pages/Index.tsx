@@ -13,7 +13,7 @@ const Index = () => {
   const handleLogoTap = useCallback(() => {
     tapCount.current += 1;
     if (tapTimer.current) clearTimeout(tapTimer.current);
-    if (tapCount.current >= 5) {
+    if (tapCount.current >= 3) {
       tapCount.current = 0;
       navigate('/login');
       return;
