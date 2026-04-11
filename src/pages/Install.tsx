@@ -96,8 +96,6 @@ const Install = () => {
                 ¡App instalada!
               </p>
             </div>
-              </p>
-            </div>
           ) : isIOS ? (
             <div className="bg-surface-elevated rounded-lg p-6 text-center space-y-4">
               <Share className="text-gold mx-auto" size={28} />
