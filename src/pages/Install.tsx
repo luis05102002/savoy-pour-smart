@@ -91,9 +91,11 @@ const Install = () => {
         >
           {isInstalled ? (
             <div className="text-center py-4">
-              <CheckCircle className="text-green-400 mx-auto mb-2" size={40} />
-              <p className="text-green-400 font-display tracking-wider">
+              <CheckCircle className="text-success mx-auto mb-2" size={40} />
+              <p className="text-success font-display tracking-wider">
                 ¡App instalada!
+              </p>
+            </div>
               </p>
             </div>
           ) : isIOS ? (

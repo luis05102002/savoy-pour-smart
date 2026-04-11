@@ -28,6 +28,7 @@ const App = () => (
             <Route path="/index" element={<Index />} />
             <Route path="/menu" element={<Menu />} />
             <Route path="/reservar" element={<Reservar />} />
+            <Route path="/install" element={<Install />} />
             <Route path="/login" element={<Login />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/qr" element={<ProtectedRoute><QRCodes /></ProtectedRoute>} />
