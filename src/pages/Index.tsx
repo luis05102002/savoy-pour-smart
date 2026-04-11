@@ -18,7 +18,7 @@ const Index = () => {
       navigate('/login');
       return;
     }
-    tapTimer.current = setTimeout(() => { tapCount.current = 0; }, 1500);
+    tapTimer.current = setTimeout(() => { tapCount.current = 0; }, 3000);
   }, [navigate]);
 
   return (
