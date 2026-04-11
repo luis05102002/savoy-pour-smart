@@ -15,10 +15,10 @@ const Index = () => {
     if (tapTimer.current) clearTimeout(tapTimer.current);
     if (tapCount.current >= 3) {
       tapCount.current = 0;
-      navigate('/login');
+      navigate('/login', { replace: true });
       return;
     }
-    tapTimer.current = setTimeout(() => { tapCount.current = 0; }, 3000);
+    tapTimer.current = setTimeout(() => { tapCount.current = 0; }, 5000);
   }, [navigate]);
 
   return (
