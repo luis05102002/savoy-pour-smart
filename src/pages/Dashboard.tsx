@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, ChefHat, Check, Receipt, FileText, QrCode, LogOut, BarChart3, Wine, ClipboardList, History, Bell, BellOff, RefreshCw } from 'lucide-react';
+import { Clock, ChefHat, Check, Receipt, FileText, QrCode, LogOut, BarChart3, Wine, ClipboardList, History, Bell, BellOff, RefreshCw, CalendarDays } from 'lucide-react';
 import { useRealtimeOrders } from '@/hooks/useOrders';
 import type { Order } from '@/data/menu';
 import DashboardStats from '@/components/DashboardStats';
@@ -11,6 +11,7 @@ import InvoiceModal from '@/components/InvoiceModal';
 import NewOrderAlert from '@/components/NewOrderAlert';
 import BackButton from '@/components/BackButton';
 import TableHistory from '@/components/TableHistory';
+import ReservationManager from '@/components/ReservationManager';
 import { useAuth } from '@/hooks/useAuth';
 
 const statusConfig = {
@@ -22,7 +23,7 @@ const statusConfig = {
 
 const statusFlow: Order['status'][] = ['pending', 'preparing', 'served', 'paid'];
 
-type Tab = 'orders' | 'stats' | 'menu' | 'history';
+type Tab = 'orders' | 'reservations' | 'stats' | 'menu' | 'history';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -41,6 +42,7 @@ const Dashboard = () => {
 
   const tabs: { id: Tab; label: string; icon: typeof ClipboardList }[] = [
     { id: 'orders', label: 'Pedidos', icon: ClipboardList },
+    { id: 'reservations', label: 'Reservas', icon: CalendarDays },
     { id: 'history', label: 'Mesas', icon: History },
     { id: 'stats', label: 'Estadísticas', icon: BarChart3 },
     { id: 'menu', label: 'Carta', icon: Wine },
@@ -232,6 +234,9 @@ const Dashboard = () => {
 
         {/* Stats Tab */}
         {activeTab === 'stats' && <SalesStats orders={orders} />}
+
+        {/* Reservations Tab */}
+        {activeTab === 'reservations' && <ReservationManager />}
 
         {/* Table History Tab */}
         {activeTab === 'history' && (
