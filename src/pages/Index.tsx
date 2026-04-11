@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Wine, ScanLine } from 'lucide-react';
@@ -7,6 +7,19 @@ import QRScanner from '@/components/QRScanner';
 const Index = () => {
   const navigate = useNavigate();
   const [showScanner, setShowScanner] = useState(false);
+  const tapCount = useRef(0);
+  const tapTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  const handleLogoTap = useCallback(() => {
+    tapCount.current += 1;
+    if (tapTimer.current) clearTimeout(tapTimer.current);
+    if (tapCount.current >= 5) {
+      tapCount.current = 0;
+      navigate('/login');
+      return;
+    }
+    tapTimer.current = setTimeout(() => { tapCount.current = 0; }, 800);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
@@ -17,7 +30,10 @@ const Index = () => {
         className="text-center"
       >
         <div className="art-deco-line w-32 mx-auto mb-8" />
-        <h1 className="font-display text-5xl md:text-7xl gold-text-gradient tracking-[0.25em] uppercase">
+        <h1
+          onClick={handleLogoTap}
+          className="font-display text-5xl md:text-7xl gold-text-gradient tracking-[0.25em] uppercase cursor-default select-none"
+        >
           Savoy
         </h1>
         <p className="text-muted-foreground text-sm tracking-[0.4em] uppercase mt-3">
@@ -45,13 +61,6 @@ const Index = () => {
         >
           <Wine size={20} />
           Ver Carta
-        </button>
-        {/* Staff-only subtle access — invisible to clients */}
-        <button
-          onClick={() => navigate('/login')}
-          className="mt-8 text-[10px] text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors tracking-widest uppercase"
-        >
-          Acceso personal
         </button>
       </motion.div>
 
