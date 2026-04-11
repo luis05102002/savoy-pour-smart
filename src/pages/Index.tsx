@@ -29,17 +29,14 @@ const Index = () => {
         transition={{ duration: 0.8 }}
         className="text-center"
       >
-        <div className="art-deco-line w-32 mx-auto mb-8" />
-        <h1
+        <img
+          src="/logo.png"
+          alt="Savoy Cocktail Bar"
           onClick={handleLogoTap}
-          className="font-display text-5xl md:text-7xl gold-text-gradient tracking-[0.25em] uppercase cursor-default select-none"
-        >
-          Savoy
-        </h1>
-        <p className="text-muted-foreground text-sm tracking-[0.4em] uppercase mt-3">
-          Cocktail Bar
-        </p>
-        <div className="art-deco-line w-32 mx-auto mt-8" />
+          className="w-48 h-48 md:w-64 md:h-64 mx-auto cursor-default select-none object-contain"
+          width={512}
+          height={512}
+        />
       </motion.div>
 
       <motion.div
