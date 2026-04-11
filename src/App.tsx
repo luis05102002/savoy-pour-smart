@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard.tsx";
 import Login from "./pages/Login.tsx";
 import QRCodes from "./pages/QRCodes.tsx";
 import Reservar from "./pages/Reservar.tsx";
+import Install from "./pages/Install.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
