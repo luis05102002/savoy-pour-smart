@@ -35,6 +35,8 @@ const Dashboard = () => {
   const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('orders');
 
+  const filtered = filter === 'all' ? orders : orders.filter((o) => o.status === filter);
+
   // Group orders by table
   const groupedByTable = useMemo(() => {
     const map = new Map<number, Order[]>();
@@ -48,8 +50,6 @@ const Dashboard = () => {
 
   // Check if a table has a pending waiter call
   const tableHasCall = (tableNumber: number) => calls.find(c => c.table_number === tableNumber);
-
-  const filtered = filter === 'all' ? orders : orders.filter((o) => o.status === filter);
 
   const nextStatus = (current: Order['status']) => {
     const idx = statusFlow.indexOf(current);
