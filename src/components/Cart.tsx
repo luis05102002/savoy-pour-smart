@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, Minus, Plus, X, Send, QrCode, MessageSquare, HandCoins, Receipt } from 'lucide-react';
 import { useCartStore } from '@/store/orderStore';
 import { submitOrder } from '@/hooks/useOrders';
+import { supabase } from '@/integrations/supabase/client';
 import type { Order } from '@/data/menu';
 import { toast } from 'sonner';
 
@@ -63,7 +64,6 @@ const Cart = () => {
     if (!tableNumber || billRequested) return;
     setCalling(true);
     try {
-      const { supabase } = await import('@/integrations/supabase/client');
       const { error } = await supabase.from('waiter_calls').insert({
         table_number: tableNumber,
         type: 'payment',
