@@ -6,7 +6,7 @@ import BackButton from '@/components/BackButton';
 
 const QRCodes = () => {
   const [tableCount, setTableCount] = useState(10);
-  const baseUrl = window.location.origin;
+  const baseUrl = import.meta.env.VITE_APP_URL || window.location.origin;
 
   const tables = Array.from({ length: tableCount }, (_, i) => i + 1);
 
