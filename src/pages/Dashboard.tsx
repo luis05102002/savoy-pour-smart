@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, ChefHat, Check, Receipt, FileText, QrCode, LogOut, BarChart3, Wine, ClipboardList, History, Bell, BellOff, RefreshCw, CalendarDays } from 'lucide-react';
+import { Clock, ChefHat, Check, Receipt, FileText, QrCode, LogOut, BarChart3, Wine, ClipboardList, History, Bell, BellOff, RefreshCw, CalendarDays, HandCoins } from 'lucide-react';
 import { useRealtimeOrders } from '@/hooks/useOrders';
 import type { Order } from '@/data/menu';
 import DashboardStats from '@/components/DashboardStats';
@@ -13,6 +13,7 @@ import BackButton from '@/components/BackButton';
 import TableHistory from '@/components/TableHistory';
 import ReservationManager from '@/components/ReservationManager';
 import { useAuth } from '@/hooks/useAuth';
+import { useWaiterCalls } from '@/hooks/useWaiterCalls';
 
 const statusConfig = {
   pending: { label: 'Pendiente', icon: Clock, color: 'text-warning' },
