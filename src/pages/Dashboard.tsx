@@ -30,9 +30,24 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { orders, updateOrderStatus, requestPermission, permission, refreshOrders, newOrderAlert, dismissAlert } = useRealtimeOrders();
   const { signOut } = useAuth();
+  const { calls, dismissCall } = useWaiterCalls();
   const [filter, setFilter] = useState<Order['status'] | 'all'>('all');
   const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('orders');
+
+  // Group orders by table
+  const groupedByTable = useMemo(() => {
+    const map = new Map<number, Order[]>();
+    for (const o of filtered) {
+      const arr = map.get(o.tableNumber) || [];
+      arr.push(o);
+      map.set(o.tableNumber, arr);
+    }
+    return Array.from(map.entries()).sort((a, b) => a[0] - b[0]);
+  }, [filtered]);
+
+  // Check if a table has a pending waiter call
+  const tableHasCall = (tableNumber: number) => calls.find(c => c.table_number === tableNumber);
 
   const filtered = filter === 'all' ? orders : orders.filter((o) => o.status === filter);
 
