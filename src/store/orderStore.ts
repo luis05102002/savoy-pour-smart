@@ -4,13 +4,17 @@ import type { MenuItem, OrderItem, Order } from '@/data/menu';
 interface CartState {
   items: OrderItem[];
   tableNumber: number | null;
+  tableOrders: Order[];
   addItem: (item: MenuItem) => void;
   removeItem: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
   updateNotes: (itemId: string, notes: string) => void;
   setTableNumber: (table: number) => void;
   clearCart: () => void;
+  addTableOrder: (order: Order) => void;
+  clearTableOrders: () => void;
   getTotal: () => number;
+  getTableTotal: () => number;
 }
 
 interface OrdersState {
