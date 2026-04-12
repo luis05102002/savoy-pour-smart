@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Minus, Plus, X, Send, QrCode, MessageSquare, Receipt } from 'lucide-react';
+import { ShoppingBag, Minus, Plus, X, Send, QrCode, MessageSquare, HandCoins, Receipt } from 'lucide-react';
 import { useCartStore } from '@/store/orderStore';
 import { submitOrder } from '@/hooks/useOrders';
-import ClientInvoice from '@/components/ClientInvoice';
 import type { Order } from '@/data/menu';
 import { toast } from 'sonner';
 
 const Cart = () => {
   const [open, setOpen] = useState(false);
   const [showBill, setShowBill] = useState(false);
+  const [billRequested, setBillRequested] = useState(false);
+  const [calling, setCalling] = useState(false);
   const { items, tableNumber, tableOrders, updateQuantity, removeItem, clearCart, getTotal, updateNotes, addTableOrder, getTableTotal } = useCartStore();
   const [sending, setSending] = useState(false);
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
@@ -17,6 +18,7 @@ const Cart = () => {
   const total = getTotal();
   const count = items.reduce((s, i) => s + i.quantity, 0);
   const tableTotal = getTableTotal();
+  const grandTotal = tableTotal + total;
 
   const handleOrder = async () => {
     if (!tableNumber) {
@@ -57,6 +59,27 @@ const Cart = () => {
     }
   };
 
+  const handleCallWaiter = async () => {
+    if (!tableNumber || billRequested) return;
+    setCalling(true);
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { error } = await supabase.from('waiter_calls').insert({
+        table_number: tableNumber,
+        type: 'payment',
+      });
+      if (error) throw error;
+      setBillRequested(true);
+      toast.success('Camarero avisado', {
+        description: 'En breve vendrá a cobrarte',
+      });
+    } catch {
+      toast.error('Error al avisar al camarero');
+    } finally {
+      setCalling(false);
+    }
+  };
+
   // Build consolidated order for invoice
   const consolidatedOrder: Order | null = tableOrders.length > 0 && tableNumber ? {
     id: tableOrders[0].id,
@@ -67,45 +90,27 @@ const Cart = () => {
     total: tableTotal,
   } : null;
 
+  const subtotal = consolidatedOrder ? consolidatedOrder.total / 1.10 : 0;
+  const iva = consolidatedOrder ? consolidatedOrder.total - subtotal : 0;
+
   return (
     <>
-      {/* Floating buttons */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3 items-end">
-        {/* View bill button - only if there are past orders */}
-        {tableOrders.length > 0 && (
-          <button
-            onClick={() => setShowBill(true)}
-            className="w-14 h-14 rounded-full bg-card border border-gold/40 flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
-          >
-            <Receipt size={22} className="text-gold" />
-          </button>
-        )}
-        {/* Cart button */}
-        <button
-          onClick={() => setOpen(true)}
-          className="w-16 h-16 rounded-full bg-gold flex items-center justify-center shadow-lg shadow-gold/20 hover:scale-105 transition-transform"
-        >
+      {/* Single unified floating button */}
+      <button
+        onClick={() => setOpen(true)}
+        className="fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full bg-gold flex items-center justify-center shadow-lg shadow-gold/20 hover:scale-105 transition-transform"
+      >
+        {(tableOrders.length > 0 || count > 0) ? (
+          <Receipt size={24} className="text-primary-foreground" />
+        ) : (
           <ShoppingBag size={24} className="text-primary-foreground" />
-          {count > 0 && (
-            <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-bold">
-              {count}
-            </span>
-          )}
-        </button>
-      </div>
-
-      {/* Running total banner */}
-      {tableOrders.length > 0 && tableNumber && (
-        <div className="fixed bottom-24 right-6 z-40">
-          <button
-            onClick={() => setShowBill(true)}
-            className="px-4 py-2 rounded-full bg-card/90 backdrop-blur border border-gold/30 shadow-lg text-sm"
-          >
-            <span className="text-muted-foreground">Cuenta: </span>
-            <span className="font-display text-gold">{tableTotal.toFixed(2)}€</span>
-          </button>
-        </div>
-      )}
+        )}
+        {count > 0 && (
+          <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-bold">
+            {count}
+          </span>
+        )}
+      </button>
 
       {/* Drawer */}
       <AnimatePresence>
@@ -132,19 +137,50 @@ const Cart = () => {
                 </button>
               </div>
 
-              {/* Previous orders summary */}
+              {/* Previous orders summary - clickable to show full bill */}
               {tableOrders.length > 0 && (
-                <div className="px-6 py-3 bg-gold/5 border-b border-border">
-                  <button onClick={() => { setOpen(false); setShowBill(true); }} className="w-full flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">{tableOrders.length} pedido(s) anterior(es)</span>
-                    <span className="font-display text-gold">{tableTotal.toFixed(2)}€</span>
-                  </button>
+                <button
+                  onClick={() => setShowBill(!showBill)}
+                  className="px-6 py-3 bg-gold/5 border-b border-border w-full flex justify-between items-center text-sm hover:bg-gold/10 transition-colors"
+                >
+                  <span className="text-muted-foreground">{tableOrders.length} pedido(s) anterior(es)</span>
+                  <span className="font-display text-gold">{tableTotal.toFixed(2)}€</span>
+                </button>
+              )}
+
+              {/* Full bill detail (collapsible) */}
+              {showBill && consolidatedOrder && (
+                <div className="px-6 py-3 bg-secondary/30 border-b border-border space-y-2">
+                  <div className="space-y-1">
+                    {consolidatedOrder.items.map((item, idx) => (
+                      <div key={`${item.menuItem.id}-${idx}`} className="flex justify-between text-xs">
+                        <span className="text-foreground">{item.quantity}× {item.menuItem.name}</span>
+                        <span className="text-muted-foreground">{(item.menuItem.price * item.quantity).toFixed(2)}€</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="art-deco-line" />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Subtotal</span>
+                    <span>{subtotal.toFixed(2)}€</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>IVA (10%)</span>
+                    <span>{iva.toFixed(2)}€</span>
+                  </div>
+                  <div className="flex justify-between font-display text-sm text-gold pt-1">
+                    <span>Total pedidos</span>
+                    <span>{tableTotal.toFixed(2)}€</span>
+                  </div>
                 </div>
               )}
 
+              {/* Current cart items */}
               <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                {items.length === 0 ? (
+                {items.length === 0 && tableOrders.length === 0 ? (
                   <p className="text-center text-muted-foreground py-12">Tu carrito está vacío</p>
+                ) : items.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-12">Añade más items al carrito</p>
                 ) : (
                   items.map((item) => (
                     <div key={item.menuItem.id} className="p-3 rounded-lg bg-secondary/50 space-y-2">
@@ -212,6 +248,7 @@ const Cart = () => {
                 )}
               </div>
 
+              {/* Footer with totals and actions */}
               {items.length > 0 && (
                 <div className="p-6 border-t border-border space-y-4">
                   {tableNumber ? (
@@ -233,7 +270,7 @@ const Cart = () => {
                   {tableOrders.length > 0 && (
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-muted-foreground">Total acumulado</span>
-                      <span className="text-muted-foreground">{(tableTotal + total).toFixed(2)}€</span>
+                      <span className="font-display text-gold">{grandTotal.toFixed(2)}€</span>
                     </div>
                   )}
                   <button
@@ -252,15 +289,34 @@ const Cart = () => {
                   </button>
                 </div>
               )}
+
+              {/* Request bill button - only if there are orders */}
+              {tableOrders.length > 0 && (
+                <div className="p-6 pt-0">
+                  <button
+                    onClick={handleCallWaiter}
+                    disabled={calling || billRequested}
+                    className={`w-full py-4 rounded-lg font-display text-lg tracking-wider flex items-center justify-center gap-3 transition-all ${
+                      billRequested
+                        ? 'bg-success/20 border border-success/40 text-success'
+                        : 'border border-gold/40 text-gold hover:bg-gold/10'
+                    } disabled:opacity-70`}
+                  >
+                    {calling ? (
+                      <div className="w-5 h-5 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+                    ) : billRequested ? (
+                      '✓ Camarero avisado'
+                    ) : (
+                      <>
+                        <HandCoins size={22} />
+                        Pedir la Cuenta
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </motion.div>
           </>
-        )}
-      </AnimatePresence>
-
-      {/* Consolidated bill / invoice */}
-      <AnimatePresence>
-        {showBill && consolidatedOrder && (
-          <ClientInvoice order={consolidatedOrder} onClose={() => setShowBill(false)} />
         )}
       </AnimatePresence>
     </>
