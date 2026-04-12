@@ -1,12 +1,10 @@
-import { useState, useRef, useCallback } from 'react';
+import { useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Wine, ScanLine, CalendarDays } from 'lucide-react';
-import QRScanner from '@/components/QRScanner';
+import { motion } from 'framer-motion';
+import { Wine, CalendarDays } from 'lucide-react';
 
 const Index = () => {
   const navigate = useNavigate();
-  const [showScanner, setShowScanner] = useState(false);
   const tapCount = useRef(0);
   const tapTimer = useRef<ReturnType<typeof setTimeout>>();
 
@@ -46,15 +44,8 @@ const Index = () => {
         className="mt-16 flex flex-col gap-4 w-full max-w-xs"
       >
         <button
-          onClick={() => setShowScanner(true)}
-          className="w-full px-8 py-4 rounded-lg gold-gradient text-primary-foreground font-display text-lg tracking-wider hover:opacity-90 transition-opacity flex items-center justify-center gap-3"
-        >
-          <ScanLine size={20} />
-          Escanear QR de Mesa
-        </button>
-        <button
           onClick={() => navigate('/menu')}
-          className="w-full px-8 py-4 rounded-lg border border-gold/40 text-gold font-display text-lg tracking-wider hover:bg-gold/10 transition-colors flex items-center justify-center gap-3"
+          className="w-full px-8 py-4 rounded-lg gold-gradient text-primary-foreground font-display text-lg tracking-wider hover:opacity-90 transition-opacity flex items-center justify-center gap-3"
         >
           <Wine size={20} />
           Ver Carta
@@ -67,18 +58,6 @@ const Index = () => {
           Reservar Mesa
         </button>
       </motion.div>
-
-      <AnimatePresence>
-        {showScanner && (
-          <QRScanner
-            onScan={(mesa) => {
-              setShowScanner(false);
-              navigate(`/menu?mesa=${mesa}`);
-            }}
-            onClose={() => setShowScanner(false)}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 };
