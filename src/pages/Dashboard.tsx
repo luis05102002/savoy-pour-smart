@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, ChefHat, Check, Receipt, FileText, QrCode, LogOut, BarChart3, Wine, ClipboardList, History, Bell, BellOff, RefreshCw, CalendarDays } from 'lucide-react';
+import { Clock, ChefHat, Check, Receipt, FileText, QrCode, LogOut, BarChart3, Wine, ClipboardList, History, Bell, BellOff, RefreshCw, CalendarDays, HandCoins } from 'lucide-react';
 import { useRealtimeOrders } from '@/hooks/useOrders';
 import type { Order } from '@/data/menu';
 import DashboardStats from '@/components/DashboardStats';
@@ -13,6 +13,7 @@ import BackButton from '@/components/BackButton';
 import TableHistory from '@/components/TableHistory';
 import ReservationManager from '@/components/ReservationManager';
 import { useAuth } from '@/hooks/useAuth';
+import { useWaiterCalls } from '@/hooks/useWaiterCalls';
 
 const statusConfig = {
   pending: { label: 'Pendiente', icon: Clock, color: 'text-warning' },
@@ -29,11 +30,26 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { orders, updateOrderStatus, requestPermission, permission, refreshOrders, newOrderAlert, dismissAlert } = useRealtimeOrders();
   const { signOut } = useAuth();
+  const { calls, dismissCall } = useWaiterCalls();
   const [filter, setFilter] = useState<Order['status'] | 'all'>('all');
   const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('orders');
 
   const filtered = filter === 'all' ? orders : orders.filter((o) => o.status === filter);
+
+  // Group orders by table
+  const groupedByTable = useMemo(() => {
+    const map = new Map<number, Order[]>();
+    for (const o of filtered) {
+      const arr = map.get(o.tableNumber) || [];
+      arr.push(o);
+      map.set(o.tableNumber, arr);
+    }
+    return Array.from(map.entries()).sort((a, b) => a[0] - b[0]);
+  }, [filtered]);
+
+  // Check if a table has a pending waiter call
+  const tableHasCall = (tableNumber: number) => calls.find(c => c.table_number === tableNumber);
 
   const nextStatus = (current: Order['status']) => {
     const idx = statusFlow.indexOf(current);
@@ -151,7 +167,33 @@ const Dashboard = () => {
               })}
             </div>
 
-            {/* Orders grid */}
+            {/* Waiter calls banner */}
+            {calls.length > 0 && (
+              <div className="mb-6 space-y-2">
+                {calls.map(call => (
+                  <motion.div
+                    key={call.id}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center justify-between p-4 rounded-xl bg-gold/10 border border-gold/40"
+                  >
+                    <div className="flex items-center gap-3">
+                      <HandCoins size={20} className="text-gold" />
+                      <span className="font-display text-gold">Mesa {call.table_number}</span>
+                      <span className="text-sm text-muted-foreground">pide la cuenta</span>
+                    </div>
+                    <button
+                      onClick={() => dismissCall(call.id)}
+                      className="px-3 py-1.5 rounded-lg bg-gold text-primary-foreground text-sm font-medium hover:opacity-90"
+                    >
+                      Atendido
+                    </button>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            {/* Orders grid - grouped by table */}
             {filtered.length === 0 ? (
               <div className="text-center py-20 text-muted-foreground">
                 <Clock size={48} className="mx-auto mb-4 opacity-30" />
@@ -161,35 +203,70 @@ const Dashboard = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <AnimatePresence>
-                  {filtered.map((order) => {
-                    const { label, icon: Icon, color } = statusConfig[order.status];
-                    const next = nextStatus(order.status);
+                  {groupedByTable.map(([tableNum, tableOrders]) => {
+                    const tableTotal = tableOrders.reduce((s, o) => s + o.total, 0);
+                    const allItems = tableOrders.flatMap(o => o.items);
+                    // Consolidate duplicate items
+                    const consolidated = new Map<string, { name: string; price: number; quantity: number }>();
+                    for (const item of allItems) {
+                      const key = item.menuItem.id;
+                      const existing = consolidated.get(key);
+                      if (existing) {
+                        existing.quantity += item.quantity;
+                      } else {
+                        consolidated.set(key, { name: item.menuItem.name, price: item.menuItem.price, quantity: item.quantity });
+                      }
+                    }
+                    // Overall status: worst status among orders
+                    const statusPriority: Record<string, number> = { pending: 0, preparing: 1, served: 2, paid: 3 };
+                    const worstOrder = tableOrders.reduce((a, b) => statusPriority[a.status] < statusPriority[b.status] ? a : b);
+                    const { label, icon: Icon, color } = statusConfig[worstOrder.status];
+                    const hasCall = tableHasCall(tableNum);
+
+                    // Consolidated invoice order
+                    const invoiceForTable: Order = {
+                      id: tableOrders[0].id,
+                      tableNumber: tableNum,
+                      items: allItems,
+                      status: 'served',
+                      createdAt: tableOrders[0].createdAt,
+                      total: tableTotal,
+                    };
 
                     return (
                       <motion.div
-                        key={order.id}
+                        key={`table-${tableNum}`}
                         layout
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className="bg-card border border-border rounded-xl p-5 flex flex-col"
+                        className={`bg-card border rounded-xl p-5 flex flex-col ${hasCall ? 'border-gold ring-2 ring-gold/30' : 'border-border'}`}
                       >
                         <div className="flex items-center justify-between mb-4">
-                          <span className="font-display text-2xl text-gold">Mesa {order.tableNumber}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-display text-2xl text-gold">Mesa {tableNum}</span>
+                            {hasCall && (
+                              <span className="px-2 py-0.5 rounded-full bg-gold/20 text-gold text-xs font-medium animate-pulse">
+                                💰 Cuenta
+                              </span>
+                            )}
+                          </div>
                           <span className={`flex items-center gap-1.5 text-sm ${color}`}>
                             <Icon size={16} />
                             {label}
                           </span>
                         </div>
 
+                        <div className="text-xs text-muted-foreground mb-2">{tableOrders.length} pedido(s)</div>
+
                         <div className="flex-1 space-y-2 mb-4">
-                          {order.items.map((item) => (
-                            <div key={item.menuItem.id} className="flex justify-between text-sm">
+                          {Array.from(consolidated.values()).map((item) => (
+                            <div key={item.name} className="flex justify-between text-sm">
                               <span className="text-foreground">
-                                {item.quantity}× {item.menuItem.name}
+                                {item.quantity}× {item.name}
                               </span>
                               <span className="text-muted-foreground">
-                                {(item.menuItem.price * item.quantity).toFixed(2)}€
+                                {(item.price * item.quantity).toFixed(2)}€
                               </span>
                             </div>
                           ))}
@@ -199,27 +276,39 @@ const Dashboard = () => {
 
                         <div className="flex justify-between items-center mb-4">
                           <span className="text-xs text-muted-foreground">
-                            {order.createdAt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                            {tableOrders[tableOrders.length - 1].createdAt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                           </span>
-                          <span className="font-display text-xl text-gold">{order.total.toFixed(2)}€</span>
+                          <span className="font-display text-xl text-gold">{tableTotal.toFixed(2)}€</span>
                         </div>
 
                         <div className="flex gap-2">
-                          {next && (
+                          {/* Advance all non-paid orders */}
+                          {tableOrders.some(o => nextStatus(o.status)) && (
                             <button
-                              onClick={() => updateOrderStatus(order.id, next)}
+                              onClick={async () => {
+                                for (const o of tableOrders) {
+                                  const next = nextStatus(o.status);
+                                  if (next) await updateOrderStatus(o.id, next);
+                                }
+                              }}
                               className="flex-1 py-2.5 rounded-lg bg-gold text-primary-foreground font-medium text-sm hover:opacity-90 transition-opacity"
                             >
-                              → {statusConfig[next].label}
+                              → {statusConfig[nextStatus(worstOrder.status) || 'paid'].label}
                             </button>
                           )}
-                          {(order.status === 'served' || order.status === 'paid') && (
+                          <button
+                            onClick={() => setInvoiceOrder(invoiceForTable)}
+                            className="py-2.5 px-4 rounded-lg border border-gold/40 text-gold text-sm hover:bg-gold/10 transition-colors flex items-center gap-1.5"
+                          >
+                            <FileText size={14} />
+                            Factura
+                          </button>
+                          {hasCall && (
                             <button
-                              onClick={() => setInvoiceOrder(order)}
-                              className="py-2.5 px-4 rounded-lg border border-gold/40 text-gold text-sm hover:bg-gold/10 transition-colors flex items-center gap-1.5"
+                              onClick={() => dismissCall(hasCall.id)}
+                              className="py-2.5 px-3 rounded-lg bg-success/20 border border-success/40 text-success text-sm hover:bg-success/30 transition-colors"
                             >
-                              <FileText size={14} />
-                              Factura
+                              ✓
                             </button>
                           )}
                         </div>
