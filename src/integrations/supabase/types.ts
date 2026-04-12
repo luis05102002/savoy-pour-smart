@@ -152,6 +152,30 @@ export type Database = {
         }
         Relationships: []
       }
+      waiter_calls: {
+        Row: {
+          created_at: string
+          id: string
+          status: string
+          table_number: number
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: string
+          table_number: number
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: string
+          table_number?: number
+          type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
