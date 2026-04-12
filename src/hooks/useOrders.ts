@@ -54,38 +54,57 @@ export const useRealtimeOrders = () => {
   const initialLoadDone = useRef(false);
   const [newOrderAlert, setNewOrderAlert] = useState<{ tableNumber: number; total: number; itemCount: number } | null>(null);
 
-  // Play LOUD notification sound — double chime with vibration
+  // Play LOUD notification sound — triple alarm chime for noisy bar
   const playNotification = useCallback(() => {
     try {
       const ctx = new AudioContext();
-      const gain = ctx.createGain();
-      gain.connect(ctx.destination);
-      gain.gain.setValueAtTime(0.8, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 2);
 
-      // First chime: 3 ascending notes
-      [0, 0.12, 0.24].forEach((delay, i) => {
-        const osc = ctx.createOscillator();
-        osc.type = 'sine';
-        osc.connect(gain);
-        osc.frequency.setValueAtTime(660 + i * 220, ctx.currentTime + delay);
-        osc.start(ctx.currentTime + delay);
-        osc.stop(ctx.currentTime + delay + 0.15);
-      });
+      // Resume context if suspended (browser autoplay policy)
+      if (ctx.state === 'suspended') ctx.resume();
 
-      // Second chime (repeat after pause)
-      [0.6, 0.72, 0.84].forEach((delay, i) => {
-        const osc = ctx.createOscillator();
-        osc.type = 'sine';
-        osc.connect(gain);
-        osc.frequency.setValueAtTime(660 + i * 220, ctx.currentTime + delay);
-        osc.start(ctx.currentTime + delay);
-        osc.stop(ctx.currentTime + delay + 0.15);
-      });
+      const now = ctx.currentTime;
 
-      // Vibrate on mobile
+      // === ALERT CHIME: 3 rounds of ascending square-wave notes ===
+      for (let round = 0; round < 3; round++) {
+        const roundStart = now + round * 1.0;
+
+        // Each round: 3 quick ascending alerts
+        for (let i = 0; i < 3; i++) {
+          const noteStart = roundStart + i * 0.15;
+
+          // High square oscillator — piercing, cuts through noise
+          const osc = ctx.createOscillator();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(880 + i * 330, noteStart);
+
+          const noteGain = ctx.createGain();
+          noteGain.gain.setValueAtTime(0.9, noteStart);
+          noteGain.gain.exponentialRampToValueAtTime(0.01, noteStart + 0.2);
+
+          osc.connect(noteGain);
+          noteGain.connect(ctx.destination);
+          osc.start(noteStart);
+          osc.stop(noteStart + 0.25);
+        }
+
+        // Low bass hit per round — physical presence
+        const bassOsc = ctx.createOscillator();
+        bassOsc.type = 'sawtooth';
+        bassOsc.frequency.setValueAtTime(220, roundStart);
+
+        const bassGain = ctx.createGain();
+        bassGain.gain.setValueAtTime(0.6, roundStart);
+        bassGain.gain.exponentialRampToValueAtTime(0.01, roundStart + 0.15);
+
+        bassOsc.connect(bassGain);
+        bassGain.connect(ctx.destination);
+        bassOsc.start(roundStart);
+        bassOsc.stop(roundStart + 0.2);
+      }
+
+      // Long vibration pattern — impossible to miss
       if ('vibrate' in navigator) {
-        navigator.vibrate([200, 100, 200, 100, 300]);
+        navigator.vibrate([300, 100, 300, 100, 300, 200, 500, 100, 500]);
       }
     } catch {
       // Audio not available
