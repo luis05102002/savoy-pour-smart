@@ -27,6 +27,7 @@ interface OrdersState {
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
   tableNumber: null,
+  tableOrders: [],
   addItem: (item) =>
     set((state) => {
       const existing = state.items.find((i) => i.menuItem.id === item.id);
@@ -59,8 +60,13 @@ export const useCartStore = create<CartState>((set, get) => ({
     })),
   setTableNumber: (table) => set({ tableNumber: table }),
   clearCart: () => set((state) => ({ items: [], tableNumber: state.tableNumber })),
+  addTableOrder: (order) =>
+    set((state) => ({ tableOrders: [...state.tableOrders, order] })),
+  clearTableOrders: () => set({ tableOrders: [] }),
   getTotal: () =>
     get().items.reduce((sum, i) => sum + i.menuItem.price * i.quantity, 0),
+  getTableTotal: () =>
+    get().tableOrders.reduce((sum, o) => sum + o.total, 0),
 }));
 
 export const useOrdersStore = create<OrdersState>((set) => ({
