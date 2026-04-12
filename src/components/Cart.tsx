@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Minus, Plus, X, Send, QrCode, MessageSquare } from 'lucide-react';
+import { ShoppingBag, Minus, Plus, X, Send, QrCode, MessageSquare, Receipt } from 'lucide-react';
 import { useCartStore } from '@/store/orderStore';
 import { submitOrder } from '@/hooks/useOrders';
 import ClientInvoice from '@/components/ClientInvoice';
@@ -9,13 +9,14 @@ import { toast } from 'sonner';
 
 const Cart = () => {
   const [open, setOpen] = useState(false);
-  const { items, tableNumber, updateQuantity, removeItem, clearCart, getTotal, updateNotes } = useCartStore();
+  const [showBill, setShowBill] = useState(false);
+  const { items, tableNumber, tableOrders, updateQuantity, removeItem, clearCart, getTotal, updateNotes, addTableOrder, getTableTotal } = useCartStore();
   const [sending, setSending] = useState(false);
-  const [lastOrder, setLastOrder] = useState<Order | null>(null);
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
 
   const total = getTotal();
   const count = items.reduce((s, i) => s + i.quantity, 0);
+  const tableTotal = getTableTotal();
 
   const handleOrder = async () => {
     if (!tableNumber) {
@@ -43,12 +44,12 @@ const Cart = () => {
         total: result.total,
       };
 
+      addTableOrder(order);
       clearCart();
       setOpen(false);
       toast.success('Pedido enviado al bar', {
         description: `Mesa ${tableNumber} · ${result.total.toFixed(2)}€`,
       });
-      setLastOrder(order);
     } catch (err: any) {
       toast.error(err?.message || 'Error al enviar el pedido. Inténtalo de nuevo.');
     } finally {
@@ -56,20 +57,55 @@ const Cart = () => {
     }
   };
 
+  // Build consolidated order for invoice
+  const consolidatedOrder: Order | null = tableOrders.length > 0 && tableNumber ? {
+    id: tableOrders[0].id,
+    tableNumber,
+    items: tableOrders.flatMap(o => o.items),
+    status: 'served' as const,
+    createdAt: tableOrders[0].createdAt,
+    total: tableTotal,
+  } : null;
+
   return (
     <>
-      {/* Floating button */}
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full bg-gold flex items-center justify-center shadow-lg shadow-gold/20 hover:scale-105 transition-transform"
-      >
-        <ShoppingBag size={24} className="text-primary-foreground" />
-        {count > 0 && (
-          <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-bold">
-            {count}
-          </span>
+      {/* Floating buttons */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3 items-end">
+        {/* View bill button - only if there are past orders */}
+        {tableOrders.length > 0 && (
+          <button
+            onClick={() => setShowBill(true)}
+            className="w-14 h-14 rounded-full bg-card border border-gold/40 flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
+          >
+            <Receipt size={22} className="text-gold" />
+          </button>
         )}
-      </button>
+        {/* Cart button */}
+        <button
+          onClick={() => setOpen(true)}
+          className="w-16 h-16 rounded-full bg-gold flex items-center justify-center shadow-lg shadow-gold/20 hover:scale-105 transition-transform"
+        >
+          <ShoppingBag size={24} className="text-primary-foreground" />
+          {count > 0 && (
+            <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-bold">
+              {count}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Running total banner */}
+      {tableOrders.length > 0 && tableNumber && (
+        <div className="fixed bottom-24 right-6 z-40">
+          <button
+            onClick={() => setShowBill(true)}
+            className="px-4 py-2 rounded-full bg-card/90 backdrop-blur border border-gold/30 shadow-lg text-sm"
+          >
+            <span className="text-muted-foreground">Cuenta: </span>
+            <span className="font-display text-gold">{tableTotal.toFixed(2)}€</span>
+          </button>
+        </div>
+      )}
 
       {/* Drawer */}
       <AnimatePresence>
@@ -95,6 +131,16 @@ const Cart = () => {
                   <X size={20} />
                 </button>
               </div>
+
+              {/* Previous orders summary */}
+              {tableOrders.length > 0 && (
+                <div className="px-6 py-3 bg-gold/5 border-b border-border">
+                  <button onClick={() => { setOpen(false); setShowBill(true); }} className="w-full flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">{tableOrders.length} pedido(s) anterior(es)</span>
+                    <span className="font-display text-gold">{tableTotal.toFixed(2)}€</span>
+                  </button>
+                </div>
+              )}
 
               <div className="flex-1 overflow-y-auto p-6 space-y-4">
                 {items.length === 0 ? (
@@ -181,9 +227,15 @@ const Cart = () => {
                     </div>
                   )}
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Total</span>
+                    <span className="text-muted-foreground">Este pedido</span>
                     <span className="font-display text-2xl text-gold">{total.toFixed(2)}€</span>
                   </div>
+                  {tableOrders.length > 0 && (
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Total acumulado</span>
+                      <span className="text-muted-foreground">{(tableTotal + total).toFixed(2)}€</span>
+                    </div>
+                  )}
                   <button
                     onClick={handleOrder}
                     disabled={sending || !tableNumber}
@@ -205,10 +257,10 @@ const Cart = () => {
         )}
       </AnimatePresence>
 
-      {/* Client Invoice after order */}
+      {/* Consolidated bill / invoice */}
       <AnimatePresence>
-        {lastOrder && (
-          <ClientInvoice order={lastOrder} onClose={() => setLastOrder(null)} />
+        {showBill && consolidatedOrder && (
+          <ClientInvoice order={consolidatedOrder} onClose={() => setShowBill(false)} />
         )}
       </AnimatePresence>
     </>

@@ -4,13 +4,17 @@ import type { MenuItem, OrderItem, Order } from '@/data/menu';
 interface CartState {
   items: OrderItem[];
   tableNumber: number | null;
+  tableOrders: Order[];
   addItem: (item: MenuItem) => void;
   removeItem: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
   updateNotes: (itemId: string, notes: string) => void;
   setTableNumber: (table: number) => void;
   clearCart: () => void;
+  addTableOrder: (order: Order) => void;
+  clearTableOrders: () => void;
   getTotal: () => number;
+  getTableTotal: () => number;
 }
 
 interface OrdersState {
@@ -23,6 +27,7 @@ interface OrdersState {
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
   tableNumber: null,
+  tableOrders: [],
   addItem: (item) =>
     set((state) => {
       const existing = state.items.find((i) => i.menuItem.id === item.id);
@@ -55,8 +60,13 @@ export const useCartStore = create<CartState>((set, get) => ({
     })),
   setTableNumber: (table) => set({ tableNumber: table }),
   clearCart: () => set((state) => ({ items: [], tableNumber: state.tableNumber })),
+  addTableOrder: (order) =>
+    set((state) => ({ tableOrders: [...state.tableOrders, order] })),
+  clearTableOrders: () => set({ tableOrders: [] }),
   getTotal: () =>
     get().items.reduce((sum, i) => sum + i.menuItem.price * i.quantity, 0),
+  getTableTotal: () =>
+    get().tableOrders.reduce((sum, o) => sum + o.total, 0),
 }));
 
 export const useOrdersStore = create<OrdersState>((set) => ({
