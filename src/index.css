@@ -99,6 +99,17 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
   .art-deco-line {
     height: 1px;
     background: linear-gradient(90deg, transparent, hsl(160 22% 52% / 0.5), transparent);
