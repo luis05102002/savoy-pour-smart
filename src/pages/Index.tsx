@@ -1,7 +1,7 @@
 import { useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Wine, CalendarDays } from 'lucide-react';
+import { Wine, CalendarDays, Info } from 'lucide-react';
 import savoyLogo from '@/assets/savoy-logo.png';
 
 const Index = () => {
@@ -57,6 +57,13 @@ const Index = () => {
         >
           <CalendarDays size={20} />
           Reservar Mesa
+        </button>
+        <button
+          onClick={() => navigate('/promo')}
+          className="w-full px-8 py-3 rounded-lg border border-border/50 text-muted-foreground font-display text-sm tracking-wider hover:border-gold/30 hover:text-gold transition-colors flex items-center justify-center gap-2"
+        >
+          <Info size={16} />
+          Conócenos
         </button>
       </motion.div>
     </div>
