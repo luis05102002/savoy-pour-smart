@@ -25,9 +25,9 @@ const App = () => (
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Promo />} />
-            <Route path="/promo" element={<Promo />} />
+            <Route path="/" element={<Index />} />
             <Route path="/index" element={<Index />} />
+            <Route path="/promo" element={<Promo />} />
             <Route path="/menu" element={<Menu />} />
             <Route path="/reservar" element={<Reservar />} />
             <Route path="/install" element={<Install />} />

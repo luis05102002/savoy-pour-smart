@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Instagram, MapPin, Clock, Wine, CalendarDays, ArrowRight, Sparkles, Heart } from 'lucide-react';
+import { Instagram, MapPin, Clock, Wine, CalendarDays, ArrowRight, ArrowLeft, Sparkles, Heart } from 'lucide-react';
 import savoyLogo from '@/assets/savoy-logo.png';
 
 // Import drink images that ARE bundled with the app
@@ -82,6 +82,15 @@ const Promo = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* Botón Volver */}
+      <button
+        onClick={() => navigate(-1)}
+        className="fixed top-4 left-4 z-50 p-3 rounded-full bg-background/80 backdrop-blur-sm border border-border hover:border-gold/50 transition-colors"
+        aria-label="Volver"
+      >
+        <ArrowLeft size={20} className="text-foreground" />
+      </button>
+
       {/* Hero */}
       <section className="relative min-h-screen flex flex-col items-center justify-center px-6 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-gold/5 via-transparent to-transparent pointer-events-none" />
