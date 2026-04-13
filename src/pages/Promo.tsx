@@ -17,6 +17,19 @@ import drinks10 from '@/assets/drinks/golden-night.jpg';
 import drinks11 from '@/assets/drinks/savoy-royale.jpg';
 import drinks12 from '@/assets/drinks/macallan-18.jpg';
 
+// Import imágenes de public que ahora están en src/assets
+import imgVuelve from '@/assets/savoy-vuelve.jpg';
+import imgDespierta from '@/assets/savoy-despierta.jpg';
+import imgLegado from '@/assets/savoy-legado.jpg';
+import imgRincon from '@/assets/savoy-rincon.jpg';
+import imgCafeCopa from '@/assets/savoy-cafe-copa.jpg';
+import imgGracias from '@/assets/savoy-gracias.jpg';
+import imgApertura from '@/assets/savoy-apertura.jpg';
+import imgSemanaSanta from '@/assets/savoy-semana-santa.jpg';
+import imgVermut from '@/assets/savoy-vermut.jpg';
+import imgHaVuelto from '@/assets/savoy-ha-vuelto.jpg';
+import imgHoyEsTodo from '@/assets/savoy-hoy-es-todo.jpg';
+
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
   whileInView: { opacity: 1, y: 0 },
@@ -221,7 +234,7 @@ const Promo = () => {
 
             <motion.div {...stagger} transition={{ delay: 0.1 }} className="relative overflow-hidden rounded-2xl">
               <img
-                src="images/savoy-vermut.jpg"
+                src={imgVermut}
                 alt="La hora del vermut"
                 className="w-full aspect-[3/4] object-cover"
                 loading="lazy"
@@ -272,12 +285,12 @@ const Promo = () => {
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {[
-              { src: 'images/savoy-ha-vuelto.jpg', alt: 'Savoy ha vuelto al centro de Sanlúcar' },
-              { src: 'images/savoy-apertura.jpg', alt: 'Apertura de Savoy' },
-              { src: 'images/savoy-semana-santa.jpg', alt: 'Semana Santa en Savoy con Perico The Long' },
-              { src: 'images/savoy-gracias.jpg', alt: 'GRACIAS por el reencuentro' },
-              { src: 'images/savoy-cafe-copa.jpg', alt: 'Un café o una copa en Sanlúcar' },
-              { src: 'images/savoy-hoy-es-todo.jpg', alt: 'Hoy es todo vuestro' },
+              { src: imgHaVuelto, alt: 'Savoy ha vuelto al centro de Sanlúcar' },
+              { src: imgApertura, alt: 'Apertura de Savoy' },
+              { src: imgSemanaSanta, alt: 'Semana Santa en Savoy con Perico The Long' },
+              { src: imgGracias, alt: 'GRACIAS por el reencuentro' },
+              { src: imgCafeCopa, alt: 'Un café o una copa en Sanlúcar' },
+              { src: imgHoyEsTodo, alt: 'Hoy es todo vuestro' },
             ].map(({ src, alt }, i) => (
               <motion.div
                 key={src}
