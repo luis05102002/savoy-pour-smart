@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+﻿import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const ALLOWED_ORIGINS = [
   "https://savoy-by-pg.lovable.app",
@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
     }
 
     // Map by id for quick lookup
-    const menuMap = new Map(menuItems.map((m) => [m.id, m]));
+    const menuMap = new Map(menuItems.map((m) => [m.id, m]);
 
     // Validate all items exist and are available, build order items with real prices
     const orderItems = [];
@@ -193,3 +193,4 @@ Deno.serve(async (req) => {
     );
   }
 });
+
