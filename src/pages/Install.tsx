@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Download, Share, CheckCircle, Smartphone } from 'lucide-react';
 import BackButton from '@/components/BackButton';
+import savoyLogo from '@/assets/savoy-logo.png';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -49,8 +50,8 @@ const Install = () => {
           className="text-center mt-8"
         >
           <img
-            src="/logo.png"
-            alt="Savoy Cocktail Bar"
+            src={savoyLogo}
+            alt="Savoy by PG"
             className="w-32 h-32 mx-auto mb-6 object-contain"
             width={512}
             height={512}
