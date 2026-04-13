@@ -37,7 +37,6 @@ const Dashboard = () => {
 
   const filtered = filter === 'all' ? orders : orders.filter((o) => o.status === filter);
 
-  // Group orders by table
   const groupedByTable = useMemo(() => {
     const map = new Map<number, Order[]>();
     for (const o of filtered) {
@@ -48,7 +47,6 @@ const Dashboard = () => {
     return Array.from(map.entries()).sort((a, b) => a[0] - b[0]);
   }, [filtered]);
 
-  // Check if a table has a pending waiter call
   const tableHasCall = (tableNumber: number) => calls.find(c => c.table_number === tableNumber);
 
   const nextStatus = (current: Order['status']) => {
@@ -60,7 +58,7 @@ const Dashboard = () => {
     { id: 'orders', label: 'Pedidos', icon: ClipboardList },
     { id: 'reservations', label: 'Reservas', icon: CalendarDays },
     { id: 'history', label: 'Mesas', icon: History },
-    { id: 'stats', label: 'Estadísticas', icon: BarChart3 },
+    { id: 'stats', label: 'Stats', icon: BarChart3 },
     { id: 'menu', label: 'Carta', icon: Wine },
   ];
 
@@ -68,81 +66,75 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       <NewOrderAlert order={newOrderAlert} onDismiss={dismissAlert} />
       <header className="border-b border-border bg-card">
-        <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <BackButton to="/" label="Inicio" />
             <div>
-              <h1 className="font-display text-2xl gold-text-gradient tracking-[0.15em] uppercase">
+              <h1 className="font-display text-xl gold-text-gradient tracking-[0.15em] uppercase">
                 Savoy
               </h1>
               <p className="text-muted-foreground text-xs tracking-wider">Panel de Gestión</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => { refreshOrders(); }}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-muted-foreground text-sm hover:text-foreground hover:border-gold/40 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-muted-foreground text-xs hover:text-foreground hover:border-gold/40 transition-colors"
               title="Actualizar pedidos"
             >
-              <RefreshCw size={16} />
-              <span className="hidden sm:inline">Actualizar</span>
+              <RefreshCw size={14} />
             </button>
             <button
               onClick={requestPermission}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs transition-colors ${
                 permission === 'granted'
                   ? 'border-success/40 text-success'
                   : 'border-gold/40 text-gold hover:bg-gold/10'
               }`}
               title={permission === 'granted' ? 'Notificaciones activadas' : 'Activar notificaciones push'}
             >
-              {permission === 'granted' ? <Bell size={16} /> : <BellOff size={16} />}
-              <span className="hidden sm:inline">{permission === 'granted' ? 'Push ON' : 'Push'}</span>
+              {permission === 'granted' ? <Bell size={14} /> : <BellOff size={14} />}
             </button>
             <button
               onClick={() => navigate('/qr')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gold/40 text-gold text-sm hover:bg-gold/10 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gold/40 text-gold text-xs hover:bg-gold/10 transition-colors"
             >
-              <QrCode size={16} />
-              <span className="hidden sm:inline">QR Mesas</span>
+              <QrCode size={14} />
             </button>
             <button
               onClick={async () => { await signOut(); navigate('/login'); }}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-destructive/40 text-destructive text-sm hover:bg-destructive/10 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-destructive/40 text-destructive text-xs hover:bg-destructive/10 transition-colors"
             >
-              <LogOut size={16} />
-              <span className="hidden sm:inline">Salir</span>
+              <LogOut size={14} />
             </button>
           </div>
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-6 py-6">
-        {/* Tabs */}
-        <div className="flex gap-1 mb-6 bg-secondary/50 rounded-xl p-1 w-fit">
+      <div className="max-w-6xl mx-auto px-4 py-4">
+        {/* Tabs - scrollable on mobile */}
+        <div className="flex gap-1 mb-4 bg-secondary/50 rounded-xl p-1 overflow-x-auto no-scrollbar">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs whitespace-nowrap transition-all ${
                 activeTab === tab.id
                   ? 'bg-gold text-primary-foreground font-medium'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <tab.icon size={16} />
+              <tab.icon size={14} />
               {tab.label}
             </button>
           ))}
         </div>
 
-        {/* Orders Tab */}
         {activeTab === 'orders' && (
           <>
             <DashboardStats orders={orders} />
 
-            {/* Filters */}
-            <div className="flex gap-2 mb-6 overflow-x-auto">
+            <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar">
               {(['all', ...statusFlow] as const).map((s) => {
                 const label = s === 'all' ? 'Todos' : statusConfig[s].label;
                 const count = s === 'all' ? orders.length : orders.filter((o) => o.status === s).length;
@@ -150,7 +142,7 @@ const Dashboard = () => {
                   <button
                     key={s}
                     onClick={() => setFilter(s)}
-                    className={`shrink-0 px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-2 ${
+                    className={`shrink-0 px-3 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1.5 ${
                       filter === s
                         ? 'bg-gold text-primary-foreground'
                         : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
@@ -167,24 +159,23 @@ const Dashboard = () => {
               })}
             </div>
 
-            {/* Waiter calls banner */}
             {calls.length > 0 && (
-              <div className="mb-6 space-y-2">
+              <div className="mb-4 space-y-2">
                 {calls.map(call => (
                   <motion.div
                     key={call.id}
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center justify-between p-4 rounded-xl bg-gold/10 border border-gold/40"
+                    className="flex items-center justify-between p-3 rounded-xl bg-gold/10 border border-gold/40"
                   >
-                    <div className="flex items-center gap-3">
-                      <HandCoins size={20} className="text-gold" />
-                      <span className="font-display text-gold">Mesa {call.table_number}</span>
-                      <span className="text-sm text-muted-foreground">pide la cuenta</span>
+                    <div className="flex items-center gap-2">
+                      <HandCoins size={18} className="text-gold" />
+                      <span className="font-display text-gold text-sm">Mesa {call.table_number}</span>
+                      <span className="text-xs text-muted-foreground">pide la cuenta</span>
                     </div>
                     <button
                       onClick={() => dismissCall(call.id)}
-                      className="px-3 py-1.5 rounded-lg bg-gold text-primary-foreground text-sm font-medium hover:opacity-90"
+                      className="px-3 py-1.5 rounded-lg bg-gold text-primary-foreground text-xs font-medium hover:opacity-90"
                     >
                       Atendido
                     </button>
@@ -193,7 +184,6 @@ const Dashboard = () => {
               </div>
             )}
 
-            {/* Orders grid - grouped by table */}
             {filtered.length === 0 ? (
               <div className="text-center py-20 text-muted-foreground">
                 <Clock size={48} className="mx-auto mb-4 opacity-30" />
@@ -206,7 +196,6 @@ const Dashboard = () => {
                   {groupedByTable.map(([tableNum, tableOrders]) => {
                     const tableTotal = tableOrders.reduce((s, o) => s + o.total, 0);
                     const allItems = tableOrders.flatMap(o => o.items);
-                    // Consolidate duplicate items
                     const consolidated = new Map<string, { name: string; price: number; quantity: number }>();
                     for (const item of allItems) {
                       const key = item.menuItem.id;
@@ -217,13 +206,11 @@ const Dashboard = () => {
                         consolidated.set(key, { name: item.menuItem.name, price: item.menuItem.price, quantity: item.quantity });
                       }
                     }
-                    // Overall status: worst status among orders
                     const statusPriority: Record<string, number> = { pending: 0, preparing: 1, served: 2, paid: 3 };
                     const worstOrder = tableOrders.reduce((a, b) => statusPriority[a.status] < statusPriority[b.status] ? a : b);
                     const { label, icon: Icon, color } = statusConfig[worstOrder.status];
                     const hasCall = tableHasCall(tableNum);
 
-                    // Consolidated invoice order
                     const invoiceForTable: Order = {
                       id: tableOrders[0].id,
                       tableNumber: tableNum,
@@ -240,26 +227,26 @@ const Dashboard = () => {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className={`bg-card border rounded-xl p-5 flex flex-col ${hasCall ? 'border-gold ring-2 ring-gold/30' : 'border-border'}`}
+                        className={`bg-card border rounded-xl p-4 flex flex-col ${hasCall ? 'border-gold ring-2 ring-gold/30' : 'border-border'}`}
                       >
-                        <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
-                            <span className="font-display text-2xl text-gold">Mesa {tableNum}</span>
+                            <span className="font-display text-xl text-gold">Mesa {tableNum}</span>
                             {hasCall && (
                               <span className="px-2 py-0.5 rounded-full bg-gold/20 text-gold text-xs font-medium animate-pulse">
-                                💰 Cuenta
+                                💰
                               </span>
                             )}
                           </div>
-                          <span className={`flex items-center gap-1.5 text-sm ${color}`}>
-                            <Icon size={16} />
+                          <span className={`flex items-center gap-1 text-xs ${color}`}>
+                            <Icon size={14} />
                             {label}
                           </span>
                         </div>
 
                         <div className="text-xs text-muted-foreground mb-2">{tableOrders.length} pedido(s)</div>
 
-                        <div className="flex-1 space-y-2 mb-4">
+                        <div className="flex-1 space-y-1.5 mb-3">
                           {Array.from(consolidated.values()).map((item) => (
                             <div key={item.name} className="flex justify-between text-sm">
                               <span className="text-foreground">
@@ -272,17 +259,16 @@ const Dashboard = () => {
                           ))}
                         </div>
 
-                        <div className="art-deco-line my-3" />
+                        <div className="art-deco-line my-2" />
 
-                        <div className="flex justify-between items-center mb-4">
+                        <div className="flex justify-between items-center mb-3">
                           <span className="text-xs text-muted-foreground">
                             {tableOrders[tableOrders.length - 1].createdAt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                           </span>
-                          <span className="font-display text-xl text-gold">{tableTotal.toFixed(2)}€</span>
+                          <span className="font-display text-lg text-gold">{tableTotal.toFixed(2)}€</span>
                         </div>
 
                         <div className="flex gap-2">
-                          {/* Advance all non-paid orders */}
                           {tableOrders.some(o => nextStatus(o.status)) && (
                             <button
                               onClick={async () => {
@@ -291,22 +277,22 @@ const Dashboard = () => {
                                   if (next) await updateOrderStatus(o.id, next);
                                 }
                               }}
-                              className="flex-1 py-2.5 rounded-lg bg-gold text-primary-foreground font-medium text-sm hover:opacity-90 transition-opacity"
+                              className="flex-1 py-2 rounded-lg bg-gold text-primary-foreground font-medium text-xs hover:opacity-90 transition-opacity"
                             >
                               → {statusConfig[nextStatus(worstOrder.status) || 'paid'].label}
                             </button>
                           )}
                           <button
                             onClick={() => setInvoiceOrder(invoiceForTable)}
-                            className="py-2.5 px-4 rounded-lg border border-gold/40 text-gold text-sm hover:bg-gold/10 transition-colors flex items-center gap-1.5"
+                            className="py-2 px-3 rounded-lg border border-gold/40 text-gold text-xs hover:bg-gold/10 transition-colors flex items-center gap-1"
                           >
-                            <FileText size={14} />
+                            <FileText size={12} />
                             Factura
                           </button>
                           {hasCall && (
                             <button
                               onClick={() => dismissCall(hasCall.id)}
-                              className="py-2.5 px-3 rounded-lg bg-success/20 border border-success/40 text-success text-sm hover:bg-success/30 transition-colors"
+                              className="py-2 px-2.5 rounded-lg bg-success/20 border border-success/40 text-success text-xs hover:bg-success/30 transition-colors"
                             >
                               ✓
                             </button>
@@ -321,13 +307,8 @@ const Dashboard = () => {
           </>
         )}
 
-        {/* Stats Tab */}
         {activeTab === 'stats' && <SalesStats orders={orders} />}
-
-        {/* Reservations Tab */}
         {activeTab === 'reservations' && <ReservationManager />}
-
-        {/* Table History Tab */}
         {activeTab === 'history' && (
           <TableHistory
             orders={orders}
@@ -338,12 +319,9 @@ const Dashboard = () => {
             }}
           />
         )}
-
-        {/* Menu Management Tab */}
         {activeTab === 'menu' && <MenuManager />}
       </div>
 
-      {/* Invoice Modal */}
       <AnimatePresence>
         {invoiceOrder && (
           <InvoiceModal order={invoiceOrder} onClose={() => setInvoiceOrder(null)} />

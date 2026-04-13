@@ -10,26 +10,23 @@ const updateTabBadge = (pendingCount: number) => {
   const base = 'Savoy · Panel';
   document.title = pendingCount > 0 ? `(${pendingCount}) 🔔 ${base}` : base;
 
-  // Update favicon with badge
   const canvas = document.createElement('canvas');
   canvas.width = 64;
   canvas.height = 64;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
-  // Base icon
   ctx.fillStyle = '#1a1a2e';
   ctx.beginPath();
   ctx.arc(32, 32, 32, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = '#d4a843';
+  ctx.fillStyle = '#6B9E9E';
   ctx.font = 'bold 28px serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText('S', 32, 34);
 
   if (pendingCount > 0) {
-    // Red badge
     ctx.fillStyle = '#ef4444';
     ctx.beginPath();
     ctx.arc(50, 14, 14, 0, Math.PI * 2);
@@ -48,70 +45,52 @@ const updateTabBadge = (pendingCount: number) => {
   link.href = canvas.toDataURL();
 };
 
+// Play LOUD notification — creates fresh AudioContext each time
+const playNotificationSound = async () => {
+  try {
+    const ctx = new AudioContext();
+    await ctx.resume();
+
+    const now = ctx.currentTime;
+    for (let round = 0; round < 3; round++) {
+      const roundStart = now + round * 1.0;
+      for (let i = 0; i < 3; i++) {
+        const noteStart = roundStart + i * 0.15;
+        const osc = ctx.createOscillator();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(880 + i * 330, noteStart);
+        const noteGain = ctx.createGain();
+        noteGain.gain.setValueAtTime(0.9, noteStart);
+        noteGain.gain.exponentialRampToValueAtTime(0.01, noteStart + 0.2);
+        osc.connect(noteGain);
+        noteGain.connect(ctx.destination);
+        osc.start(noteStart);
+        osc.stop(noteStart + 0.25);
+      }
+      const bassOsc = ctx.createOscillator();
+      bassOsc.type = 'sawtooth';
+      bassOsc.frequency.setValueAtTime(220, roundStart);
+      const bassGain = ctx.createGain();
+      bassGain.gain.setValueAtTime(0.6, roundStart);
+      bassGain.gain.exponentialRampToValueAtTime(0.01, roundStart + 0.15);
+      bassOsc.connect(bassGain);
+      bassGain.connect(ctx.destination);
+      bassOsc.start(roundStart);
+      bassOsc.stop(roundStart + 0.2);
+    }
+    if ('vibrate' in navigator) {
+      navigator.vibrate([300, 100, 300, 100, 300, 200, 500, 100, 500]);
+    }
+    setTimeout(() => ctx.close(), 5000);
+  } catch {}
+};
+
 export const useRealtimeOrders = () => {
   const { orders, setOrders, addOrder, updateOrderInStore } = useOrdersStore();
   const { sendLocalNotification, requestPermission, permission } = usePushNotifications();
   const initialLoadDone = useRef(false);
   const [newOrderAlert, setNewOrderAlert] = useState<{ tableNumber: number; total: number; itemCount: number } | null>(null);
 
-  // Play LOUD notification sound — triple alarm chime for noisy bar
-  const playNotification = useCallback(() => {
-    try {
-      const ctx = new AudioContext();
-
-      // Resume context if suspended (browser autoplay policy)
-      if (ctx.state === 'suspended') ctx.resume();
-
-      const now = ctx.currentTime;
-
-      // === ALERT CHIME: 3 rounds of ascending square-wave notes ===
-      for (let round = 0; round < 3; round++) {
-        const roundStart = now + round * 1.0;
-
-        // Each round: 3 quick ascending alerts
-        for (let i = 0; i < 3; i++) {
-          const noteStart = roundStart + i * 0.15;
-
-          // High square oscillator — piercing, cuts through noise
-          const osc = ctx.createOscillator();
-          osc.type = 'square';
-          osc.frequency.setValueAtTime(880 + i * 330, noteStart);
-
-          const noteGain = ctx.createGain();
-          noteGain.gain.setValueAtTime(0.9, noteStart);
-          noteGain.gain.exponentialRampToValueAtTime(0.01, noteStart + 0.2);
-
-          osc.connect(noteGain);
-          noteGain.connect(ctx.destination);
-          osc.start(noteStart);
-          osc.stop(noteStart + 0.25);
-        }
-
-        // Low bass hit per round — physical presence
-        const bassOsc = ctx.createOscillator();
-        bassOsc.type = 'sawtooth';
-        bassOsc.frequency.setValueAtTime(220, roundStart);
-
-        const bassGain = ctx.createGain();
-        bassGain.gain.setValueAtTime(0.6, roundStart);
-        bassGain.gain.exponentialRampToValueAtTime(0.01, roundStart + 0.15);
-
-        bassOsc.connect(bassGain);
-        bassGain.connect(ctx.destination);
-        bassOsc.start(roundStart);
-        bassOsc.stop(roundStart + 0.2);
-      }
-
-      // Long vibration pattern — impossible to miss
-      if ('vibrate' in navigator) {
-        navigator.vibrate([300, 100, 300, 100, 300, 200, 500, 100, 500]);
-      }
-    } catch {
-      // Audio not available
-    }
-  }, []);
-
-  // Update tab badge whenever orders change
   useEffect(() => {
     const pendingCount = orders.filter(o => o.status === 'pending').length;
     updateTabBadge(pendingCount);
@@ -141,12 +120,10 @@ export const useRealtimeOrders = () => {
     }
   }, [setOrders]);
 
-  // Fetch initial orders
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
 
-  // Realtime subscription
   useEffect(() => {
     const channel = supabase
       .channel('orders-realtime')
@@ -163,12 +140,13 @@ export const useRealtimeOrders = () => {
             createdAt: new Date(o.created_at),
             total: Number(o.total),
           };
-          
+
           const exists = useOrdersStore.getState().orders.some(existing => existing.id === order.id);
           if (!exists) {
             addOrder(order);
             if (initialLoadDone.current) {
-              playNotification();
+              // Always play sound — fresh AudioContext each time
+              playNotificationSound();
               setNewOrderAlert({
                 tableNumber: order.tableNumber,
                 total: order.total,
@@ -182,8 +160,8 @@ export const useRealtimeOrders = () => {
                 description: `${order.items.length} artículo(s) · ${order.total.toFixed(2)}€`,
                 duration: 15000,
                 style: {
-                  background: '#1a1a2e',
-                  border: '2px solid #d4a843',
+                  background: '#0a0a0a',
+                  border: '2px solid #6B9E9E',
                   color: '#fff',
                   fontSize: '16px',
                   padding: '16px',
@@ -206,9 +184,8 @@ export const useRealtimeOrders = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [addOrder, updateOrderInStore, playNotification]);
+  }, [addOrder, updateOrderInStore]);
 
-  // Update order status in DB
   const updateOrderStatus = async (orderId: string, status: string) => {
     updateOrderInStore(orderId, status as any);
     await supabase.from('orders').update({ status }).eq('id', orderId);
@@ -217,7 +194,6 @@ export const useRealtimeOrders = () => {
   return { orders, updateOrderStatus, requestPermission, permission, refreshOrders: fetchOrders, newOrderAlert, dismissAlert: () => setNewOrderAlert(null) };
 };
 
-// Submit order via edge function (server-side price validation)
 export const submitOrder = async (order: {
   tableNumber: number;
   items: { menuItemId: string; quantity: number; notes?: string }[];

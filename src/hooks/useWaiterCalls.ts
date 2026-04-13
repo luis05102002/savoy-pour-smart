@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { usePushNotifications } from './usePushNotifications';
 import { toast } from 'sonner';
@@ -11,9 +11,38 @@ interface WaiterCall {
   created_at: string;
 }
 
+// Play alert sound that works every time (new AudioContext per call)
+const playCallSound = async () => {
+  try {
+    const ctx = new AudioContext();
+    await ctx.resume();
+
+    const now = ctx.currentTime;
+    for (let round = 0; round < 3; round++) {
+      const t = now + round * 0.8;
+      for (let i = 0; i < 3; i++) {
+        const s = t + i * 0.12;
+        const osc = ctx.createOscillator();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(880 + i * 330, s);
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.8, s);
+        g.gain.exponentialRampToValueAtTime(0.01, s + 0.18);
+        osc.connect(g);
+        g.connect(ctx.destination);
+        osc.start(s);
+        osc.stop(s + 0.2);
+      }
+    }
+    // Close context after sound finishes
+    setTimeout(() => ctx.close(), 4000);
+  } catch {}
+};
+
 export const useWaiterCalls = () => {
   const [calls, setCalls] = useState<WaiterCall[]>([]);
   const { sendLocalNotification } = usePushNotifications();
+  const processedIds = useRef(new Set<string>());
 
   const fetchCalls = useCallback(async () => {
     const { data } = await supabase
@@ -21,7 +50,10 @@ export const useWaiterCalls = () => {
       .select('*')
       .eq('status', 'pending')
       .order('created_at', { ascending: false });
-    if (data) setCalls(data);
+    if (data) {
+      setCalls(data);
+      data.forEach(c => processedIds.current.add(c.id));
+    }
   }, []);
 
   const dismissCall = useCallback(async (id: string) => {
@@ -39,23 +71,16 @@ export const useWaiterCalls = () => {
         { event: 'INSERT', schema: 'public', table: 'waiter_calls' },
         (payload) => {
           const call = payload.new as WaiterCall;
+
+          // Skip if already processed (duplicate event)
+          if (processedIds.current.has(call.id)) return;
+          processedIds.current.add(call.id);
+
           setCalls(prev => [call, ...prev]);
 
-          // Vibrate
+          // ALWAYS play sound and vibrate — every single call
           if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
-
-          // Sound
-          try {
-            const ctx = new AudioContext();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.frequency.value = 880;
-            gain.gain.value = 0.3;
-            osc.start();
-            osc.stop(ctx.currentTime + 0.5);
-          } catch {}
+          playCallSound();
 
           // Toast
           const label = call.type === 'payment' ? '💰 Piden la cuenta' : '🔔 Llamada';
