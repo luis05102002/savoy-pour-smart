@@ -4,7 +4,7 @@
   "description": "Savoy by PG — Cocktail Bar & Lounge",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0a0a",
+  "background_color": "#6B9E9E",
   "theme_color": "#6B9E9E",
   "orientation": "portrait",
   "icons": [
