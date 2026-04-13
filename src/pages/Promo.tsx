@@ -78,6 +78,7 @@ const highlights = [
 ];
 
 const Promo = () => {
+  // Página de Conócenos - Savoy
   const navigate = useNavigate();
 
   return (
