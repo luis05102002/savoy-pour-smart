@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Instagram, MapPin, Clock, Wine, CalendarDays, ArrowRight, ArrowLeft, Sparkles, Heart } from 'lucide-react';
+import { Instagram, MapPin, Clock, CalendarDays, ArrowRight, ArrowLeft, Heart } from 'lucide-react';
 import savoyLogo from '@/assets/savoy-logo.png';
 
 // Import drink images that ARE bundled with the app
@@ -137,24 +137,7 @@ const Promo = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1 }}
-          className="mt-10 flex flex-col sm:flex-row gap-3 relative z-10"
-        >
-          <button
-            onClick={() => navigate('/menu')}
-            className="px-8 py-4 rounded-lg gold-gradient text-primary-foreground font-display text-lg tracking-wider hover:opacity-90 transition-opacity flex items-center justify-center gap-3"
-          >
-            <Sparkles size={20} />
-            Ver Carta
-            <ArrowRight size={18} />
-          </button>
-          <button
-            onClick={() => navigate('/reservar')}
-            className="px-8 py-4 rounded-lg border border-gold/40 text-gold font-display text-lg tracking-wider hover:bg-gold/10 transition-colors flex items-center justify-center gap-3"
-          >
-            <CalendarDays size={20} />
-            Reservar Mesa
-          </button>
-        </motion.div>
+          </motion.div>
 
         <motion.div
           initial={{ opacity: 0 }}
@@ -409,19 +392,12 @@ const Promo = () => {
             </div>
           </motion.div>
 
-          <motion.div {...fadeUp} className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={() => navigate('/menu')}
-              className="px-8 py-4 rounded-lg gold-gradient text-primary-foreground font-display tracking-wider hover:opacity-90 transition-opacity flex items-center justify-center gap-3"
-            >
-              <Wine size={20} />
-              Ver Carta & Reservar
-            </button>
+          <motion.div {...fadeUp}>
             <a
               href="https://www.instagram.com/savoy_pg"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-8 py-4 rounded-lg border border-gold/40 text-gold font-display tracking-wider hover:bg-gold/10 transition-colors flex items-center justify-center gap-3"
+              className="inline-flex items-center gap-3 px-8 py-4 rounded-lg border border-gold/40 text-gold font-display tracking-wider hover:bg-gold/10 transition-colors"
             >
               <Instagram size={20} />
               @savoy_pg
