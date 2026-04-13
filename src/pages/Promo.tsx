@@ -3,6 +3,20 @@ import { motion } from 'framer-motion';
 import { Instagram, MapPin, Clock, Wine, CalendarDays, ArrowRight, Sparkles, Heart } from 'lucide-react';
 import savoyLogo from '@/assets/savoy-logo.png';
 
+// Import drink images that ARE bundled with the app
+import drinks1 from '@/assets/drinks/veuve-clicquot.jpg';
+import drinks2 from '@/assets/drinks/velvet-noir.jpg';
+import drinks3 from '@/assets/drinks/truffle-old-fashioned.jpg';
+import drinks4 from '@/assets/drinks/mediterranean-breeze.jpg';
+import drinks5 from '@/assets/drinks/golden-elixir.jpg';
+import drinks6 from '@/assets/drinks/botanical-garden.jpg';
+import drinks7 from '@/assets/drinks/dom-perignon.jpg';
+import drinks8 from '@/assets/drinks/clase-azul.jpg';
+import drinks9 from '@/assets/drinks/cloudy-bay.jpg';
+import drinks10 from '@/assets/drinks/golden-night.jpg';
+import drinks11 from '@/assets/drinks/savoy-royale.jpg';
+import drinks12 from '@/assets/drinks/macallan-18.jpg';
+
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
   whileInView: { opacity: 1, y: 0 },
@@ -25,22 +39,22 @@ const cocktails = [
   { name: 'Savoy Sour', desc: 'Creación de la casa. Whisky, limón, clara, y nuestro toque secreto.' },
 ];
 
-// Real content from @savoy_pg Instagram
+// Use bundled drink images instead of external /images paths
 const storyMoments = [
   {
-    image: '/images/savoy-vuelve.jpg',
+    image: drinks1,
     quote: 'Después de muchos años en silencio, este sitio vuelve a latir. Misma esencia. Nueva energía.',
-    sub: 'Aquí se brindó, se bailó, se vivió. Y ahora… se vuelve a empezar.',
+    sub: 'Aquí se-brindó, se-bailó, se-vivió. Y ahora… se vuelve a-empezar.',
   },
   {
-    image: '/images/savoy-despierta.jpg',
-    quote: 'Savoy despierta. Con otra luz, otras ganas y la misma alma que lo hizo único.',
-    sub: 'Lo que fue, vuelve a ser. Y lo que viene… promete días que no se cuentan, se sienten.',
+    image: drinks2,
+    quote: 'Savoy despierta. Con otra luz, otras ganas y la misma alma que loizo único.',
+    sub: 'Lo-que-fue, vuelve a-ser. Y lo-que-viene… promete días que no se-cuentan, se-sienten.',
   },
   {
-    image: '/images/savoy-legado.jpg',
+    image: drinks3,
     quote: 'En 1988, Pigüi estaba detrás de esta barra. Ahora, en 2026, vuelve a hacerlo… junto a su hijo.',
-    sub: 'Un legado familiar que continúa, con la misma esencia de siempre y muchas ganas de escribir nuevos días y noches en Savoy.',
+    sub: 'Un-legado-familiar que continúa, con la misma esencia de siempre y muchas ganas de escribir nuevos días y noches en Savoy.',
   },
 ];
 
@@ -189,7 +203,7 @@ const Promo = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
             <motion.div {...stagger} className="relative overflow-hidden rounded-2xl">
               <img
-                src="/images/savoy-rincon.jpg"
+                src={drinks4}
                 alt="Un rincón para los que no buscan lo de siempre"
                 className="w-full aspect-[3/4] object-cover"
                 loading="lazy"
@@ -207,7 +221,7 @@ const Promo = () => {
 
             <motion.div {...stagger} transition={{ delay: 0.1 }} className="relative overflow-hidden rounded-2xl">
               <img
-                src="/images/savoy-vermut.jpg"
+                src="images/savoy-vermut.jpg"
                 alt="La hora del vermut"
                 className="w-full aspect-[3/4] object-cover"
                 loading="lazy"
@@ -258,12 +272,12 @@ const Promo = () => {
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {[
-              { src: '/images/savoy-ha-vuelto.jpg', alt: 'Savoy ha vuelto al centro de Sanlúcar' },
-              { src: '/images/savoy-apertura.jpg', alt: 'Apertura de Savoy' },
-              { src: '/images/savoy-semana-santa.jpg', alt: 'Semana Santa en Savoy con Perico The Long' },
-              { src: '/images/savoy-gracias.jpg', alt: 'GRACIAS por el reencuentro' },
-              { src: '/images/savoy-cafe-copa.jpg', alt: 'Un café o una copa en Sanlúcar' },
-              { src: '/images/savoy-hoy-es-todo.jpg', alt: 'Hoy es todo vuestro' },
+              { src: 'images/savoy-ha-vuelto.jpg', alt: 'Savoy ha vuelto al centro de Sanlúcar' },
+              { src: 'images/savoy-apertura.jpg', alt: 'Apertura de Savoy' },
+              { src: 'images/savoy-semana-santa.jpg', alt: 'Semana Santa en Savoy con Perico The Long' },
+              { src: 'images/savoy-gracias.jpg', alt: 'GRACIAS por el reencuentro' },
+              { src: 'images/savoy-cafe-copa.jpg', alt: 'Un café o una copa en Sanlúcar' },
+              { src: 'images/savoy-hoy-es-todo.jpg', alt: 'Hoy es todo vuestro' },
             ].map(({ src, alt }, i) => (
               <motion.div
                 key={src}
