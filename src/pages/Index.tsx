@@ -2,6 +2,7 @@ import { useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Wine, CalendarDays } from 'lucide-react';
+import savoyLogo from '@/assets/savoy-logo.png';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -28,8 +29,8 @@ const Index = () => {
         className="text-center"
       >
         <img
-          src="/logo.png"
-          alt="Savoy Cocktail Bar"
+          src={savoyLogo}
+          alt="Savoy by PG"
           onClick={handleLogoTap}
           className="w-48 h-48 md:w-64 md:h-64 mx-auto cursor-default select-none object-contain"
           width={512}

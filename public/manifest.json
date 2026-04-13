@@ -1,11 +1,11 @@
 {
-  "name": "Savoy Cocktail Bar",
+  "name": "Savoy by PG",
   "short_name": "Savoy",
-  "description": "Savoy Cocktail Bar — Carta, reservas y pedidos",
+  "description": "Savoy by PG — Cocktail Bar & Lounge",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f0e17",
-  "theme_color": "#d4a843",
+  "background_color": "#0a0a0a",
+  "theme_color": "#6B9E9E",
   "orientation": "portrait",
   "icons": [
     {
