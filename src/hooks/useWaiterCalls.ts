@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
 import { usePushNotifications } from './usePushNotifications';
 import { toast } from 'sonner';
 
@@ -41,10 +42,12 @@ const playCallSound = async () => {
 
 export const useWaiterCalls = () => {
   const [calls, setCalls] = useState<WaiterCall[]>([]);
+  const { session } = useAuth();
   const { sendLocalNotification } = usePushNotifications();
   const processedIds = useRef(new Set<string>());
 
   const fetchCalls = useCallback(async () => {
+    if (!session) return;
     const { data } = await supabase
       .from('waiter_calls')
       .select('*')
@@ -54,18 +57,36 @@ export const useWaiterCalls = () => {
       setCalls(data);
       data.forEach(c => processedIds.current.add(c.id));
     }
-  }, []);
+  }, [session]);
 
   const dismissCall = useCallback(async (id: string) => {
     await supabase.from('waiter_calls').update({ status: 'attended' }).eq('id', id);
     setCalls(prev => prev.filter(c => c.id !== id));
   }, []);
 
+  const callWaiter = useCallback(async (tableNumber: number, type: string = 'payment') => {
+    try {
+      // Use Edge Function instead of direct insert
+      const { data, error } = await supabase.functions.invoke('send-waiter-call', {
+        body: { tableNumber, type },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return { success: true, data };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Error al llamar al camarero' };
+    }
+  }, []);
+
   useEffect(() => {
+    if (!session) return;
+
     fetchCalls();
 
     const channel = supabase
-      .channel('waiter-calls-realtime')
+      .channel('waiter-calls-realtime', {
+        config: { private: true },
+      })
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'waiter_calls' },
@@ -96,7 +117,7 @@ export const useWaiterCalls = () => {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [fetchCalls, sendLocalNotification]);
+  }, [session, fetchCalls, sendLocalNotification]);
 
-  return { calls, dismissCall, fetchCalls };
+  return { calls, dismissCall, callWaiter, fetchCalls };
 };

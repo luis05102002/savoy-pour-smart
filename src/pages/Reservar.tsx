@@ -40,22 +40,25 @@ const Reservar = () => {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await supabase.from('reservations').insert({
-      customer_name: form.customer_name.trim(),
-      customer_phone: form.customer_phone.trim(),
-      customer_email: form.customer_email.trim() || null,
-      reservation_date: form.reservation_date,
-      reservation_time: form.reservation_time,
-      party_size: Number(form.party_size),
-      preferred_zone: form.preferred_zone || null,
-      preferred_table: form.preferred_table ? Number(form.preferred_table) : null,
-      customer_notes: form.customer_notes.trim() || null,
-    } as any);
+    const { data, error } = await supabase.functions.invoke('create-reservation', {
+      body: {
+        customer_name: form.customer_name.trim(),
+        customer_phone: form.customer_phone.trim(),
+        customer_email: form.customer_email.trim() || null,
+        reservation_date: form.reservation_date,
+        reservation_time: form.reservation_time,
+        party_size: Number(form.party_size),
+        preferred_zone: form.preferred_zone || null,
+        preferred_table: form.preferred_table ? Number(form.preferred_table) : null,
+        customer_notes: form.customer_notes.trim() || null,
+      },
+    });
 
     setLoading(false);
     if (error) {
-      toast.error('Error al enviar la reserva. Inténtalo de nuevo.');
-      console.error(error);
+      toast.error(error.message || 'Error al enviar la reserva. Inténtalo de nuevo.');
+    } else if (data?.error) {
+      toast.error(data.error);
     } else {
       setSubmitted(true);
     }

@@ -19,17 +19,17 @@ const ClientInvoice = ({ order, onClose }: ClientInvoiceProps) => {
   const handleCallWaiter = async () => {
     setCalling(true);
     try {
-      const { error } = await supabase.from('waiter_calls').insert({
-        table_number: order.tableNumber,
-        type: 'payment',
+      const { data, error } = await supabase.functions.invoke('send-waiter-call', {
+        body: { tableNumber: order.tableNumber, type: 'payment' },
       });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       setCalled(true);
       toast.success('Camarero avisado', {
-        description: 'En breve vendrá a cobrarte',
+        description: data?.existingCall ? 'Ya hay una llamada pendiente' : 'En breve vendrá a cobrarte',
       });
-    } catch {
-      toast.error('Error al avisar al camarero');
+    } catch (err: any) {
+      toast.error(err.message || 'Error al avisar al camarero');
     } finally {
       setCalling(false);
     }

@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrdersStore } from '@/store/orderStore';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { useAuth } from '@/hooks/useAuth';
 import type { OrderItem } from '@/data/menu';
 import { toast } from 'sonner';
 
@@ -88,6 +89,7 @@ const playNotificationSound = async () => {
 export const useRealtimeOrders = () => {
   const { orders, setOrders, addOrder, updateOrderInStore } = useOrdersStore();
   const { sendLocalNotification, requestPermission, permission } = usePushNotifications();
+  const { session } = useAuth();
   const initialLoadDone = useRef(false);
   const [newOrderAlert, setNewOrderAlert] = useState<{ tableNumber: number; total: number; itemCount: number } | null>(null);
 
@@ -97,6 +99,7 @@ export const useRealtimeOrders = () => {
   }, [orders]);
 
   const fetchOrders = useCallback(async () => {
+    if (!session) return;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -118,15 +121,20 @@ export const useRealtimeOrders = () => {
       setOrders(mapped);
       initialLoadDone.current = true;
     }
-  }, [setOrders]);
+  }, [setOrders, session]);
 
   useEffect(() => {
+    if (!session) return;
     fetchOrders();
   }, [fetchOrders]);
 
   useEffect(() => {
+    if (!session) return;
+
     const channel = supabase
-      .channel('orders-realtime')
+      .channel('orders-realtime', {
+        config: { private: true },
+      })
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'orders' },
@@ -184,7 +192,7 @@ export const useRealtimeOrders = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [addOrder, updateOrderInStore]);
+  }, [addOrder, updateOrderInStore, session]);
 
   const updateOrderStatus = async (orderId: string, status: string) => {
     updateOrderInStore(orderId, status as any);
