@@ -31,7 +31,6 @@ const App = () => (
             <Route path="/menu" element={<Menu />} />
             <Route path="/reservar" element={<Reservar />} />
             <Route path="/install" element={<Install />} />
-            <Route path="/promo" element={<Promo />} />
             <Route path="/login" element={<Login />} />
             <Route path="/dashboard" element={<ProtectedRoute requireAdmin><Dashboard /></ProtectedRoute>} />
             <Route path="/qr" element={<ProtectedRoute requireAdmin><QRCodes /></ProtectedRoute>} />

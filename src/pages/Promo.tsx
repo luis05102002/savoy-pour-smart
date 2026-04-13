@@ -84,7 +84,7 @@ const Promo = () => {
     <div className="min-h-screen bg-background text-foreground">
       {/* Botón Volver */}
       <button
-        onClick={() => navigate(-1)}
+        onClick={() => navigate('/')}
         className="fixed top-4 left-4 z-50 p-3 rounded-full bg-background/80 backdrop-blur-sm border border-border hover:border-gold/50 transition-colors"
         aria-label="Volver"
       >
