@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Instagram, MapPin, Clock, CalendarDays, ArrowRight, ArrowLeft, Heart } from 'lucide-react';
+import { Instagram, MapPin, Clock, Wine, Sparkles, CalendarDays, ArrowRight, ArrowLeft, Heart } from 'lucide-react';
 import savoyLogo from '@/assets/savoy-logo.png';
 
 // Import drink images that ARE bundled with the app
