@@ -195,6 +195,18 @@ export const useRealtimeOrders = () => {
   }, [addOrder, updateOrderInStore, session]);
 
   const updateOrderStatus = async (orderId: string, status: string) => {
+    // Verify user has admin/staff role before allowing updates
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', session?.user?.id)
+      .single();
+
+    if (!roleData || (roleData.role !== 'admin' && roleData.role !== 'staff')) {
+      toast.error('No tienes permisos para actualizar pedidos');
+      return;
+    }
+
     updateOrderInStore(orderId, status as any);
     await supabase.from('orders').update({ status }).eq('id', orderId);
   };

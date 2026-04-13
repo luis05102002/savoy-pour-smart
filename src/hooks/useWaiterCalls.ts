@@ -60,9 +60,21 @@ export const useWaiterCalls = () => {
   }, [session]);
 
   const dismissCall = useCallback(async (id: string) => {
+    // Verify user has admin/staff role before allowing dismiss
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', session?.user?.id)
+      .single();
+
+    if (!roleData || (roleData.role !== 'admin' && roleData.role !== 'staff')) {
+      toast.error('No tienes permisos para descartar llamadas');
+      return;
+    }
+
     await supabase.from('waiter_calls').update({ status: 'attended' }).eq('id', id);
     setCalls(prev => prev.filter(c => c.id !== id));
-  }, []);
+  }, [session]);
 
   const callWaiter = useCallback(async (tableNumber: number, type: string = 'payment') => {
     try {

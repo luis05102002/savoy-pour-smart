@@ -32,8 +32,8 @@ const App = () => (
             <Route path="/install" element={<Install />} />
             <Route path="/promo" element={<Promo />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/qr" element={<ProtectedRoute><QRCodes /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute requireAdmin><Dashboard /></ProtectedRoute>} />
+            <Route path="/qr" element={<ProtectedRoute requireAdmin><QRCodes /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

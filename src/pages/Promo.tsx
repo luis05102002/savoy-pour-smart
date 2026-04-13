@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Instagram, MapPin, Clock, Wine, CalendarDays, ArrowRight, Sparkles, Phone, Mail, Heart } from 'lucide-react';
+import { Instagram, MapPin, Clock, Wine, CalendarDays, ArrowRight, Sparkles, Heart } from 'lucide-react';
 import savoyLogo from '@/assets/savoy-logo.png';
 
 const fadeUp = {
@@ -18,16 +18,35 @@ const stagger = {
 
 const cocktails = [
   { name: 'Negroni Clásico', desc: 'Gin, Campari, vermut rojo. El eterno favorito.' },
-  { name: 'Old Fashioned', desc: 'Bourbon, azúcar, Angostura. puro carácter.' },
+  { name: 'Old Fashioned', desc: 'Bourbon, azúcar, Angostura. Puro carácter.' },
   { name: 'Espresso Martini', desc: 'Vodka, café, licor de café. Energía y elegancia.' },
   { name: 'Daiquiri de Fresa', desc: 'Ron blanco, lima, fresas frescas. Verano en copa.' },
   { name: 'Margarita Ahumada', desc: 'Tequila mezcal, Cointreau, lima. Con borde de sal ahumada.' },
   { name: 'Savoy Sour', desc: 'Creación de la casa. Whisky, limón, clara, y nuestro toque secreto.' },
 ];
 
+// Real content from @savoy_pg Instagram
+const storyMoments = [
+  {
+    image: '/images/savoy-vuelve.jpg',
+    quote: 'Después de muchos años en silencio, este sitio vuelve a latir. Misma esencia. Nueva energía.',
+    sub: 'Aquí se brindó, se bailó, se vivió. Y ahora… se vuelve a empezar.',
+  },
+  {
+    image: '/images/savoy-despierta.jpg',
+    quote: 'Savoy despierta. Con otra luz, otras ganas y la misma alma que lo hizo único.',
+    sub: 'Lo que fue, vuelve a ser. Y lo que viene… promete días que no se cuentan, se sienten.',
+  },
+  {
+    image: '/images/savoy-legado.jpg',
+    quote: 'En 1988, Pigüi estaba detrás de esta barra. Ahora, en 2026, vuelve a hacerlo… junto a su hijo.',
+    sub: 'Un legado familiar que continúa, con la misma esencia de siempre y muchas ganas de escribir nuevos días y noches en Savoy.',
+  },
+];
+
 const highlights = [
   { icon: Wine, title: 'Coctelería de Autor', desc: 'Carta curada con clásicos reinventados y creaciones exclusivas de nuestra barra.' },
-  { icon: Sparkles, title: 'Ambiente Art Deco', desc: 'Diseño contemporáneo con la calidez de un club privado. Luces tenues, música selecta.' },
+  { icon: Sparkles, title: 'Ambiente Inconfundible', desc: 'Música que se siente, copas bien servidas y noches que no se parecen a ninguna otra.' },
   { icon: CalendarDays, title: 'Eventos & Privados', desc: 'Espacios exclusivos para celebraciones íntimas y eventos corporativos.' },
 ];
 
@@ -75,7 +94,7 @@ const Promo = () => {
           transition={{ delay: 0.7 }}
           className="text-center text-muted-foreground/60 text-sm mt-2 italic relative z-10"
         >
-          Donde cada copa cuenta una historia
+          Desde la primera hasta la última. Aquí apetece.
         </motion.p>
 
         <motion.div
@@ -113,20 +132,97 @@ const Promo = () => {
         </motion.div>
       </section>
 
-      {/* Sobre Nosotros */}
+      {/* Nuestra Historia — Real content from @savoy_pg */}
       <section className="py-20 px-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <motion.div {...fadeUp} className="text-center mb-14">
             <h2 className="font-display text-3xl md:text-4xl gold-text-gradient tracking-wider mb-4">
-              La Experiencia Savoy
+              Nuestra Historia
             </h2>
             <div className="art-deco-line max-w-xs mx-auto mb-6" />
             <p className="text-muted-foreground text-base md:text-lg leading-relaxed max-w-2xl mx-auto font-light">
-              Un espacio donde la coctelería clásica se encuentra con la innovación.
-              Ingredientes premium, técnicas de autor y un ambiente que te transporta
-              a otra época. Cada detalle, cuidadosamente pensado para ti.
+              En 1988, Pigüi estaba detrás de esta barra. Ahora, en 2026, vuelve a hacerlo…
+              pero esta vez junto a su hijo, que ha crecido entre bares, negocios y el amor por la hostelería.
             </p>
           </motion.div>
+
+          <div className="space-y-20">
+            {storyMoments.map(({ image, quote, sub }, i) => (
+              <motion.div
+                key={i}
+                {...fadeUp}
+                transition={{ delay: i * 0.1 }}
+                className={`flex flex-col ${i % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-8 items-center`}
+              >
+                <div className="w-full md:w-1/2">
+                  <img
+                    src={image}
+                    alt={quote}
+                    className="w-full aspect-[4/3] object-cover rounded-2xl border border-border/50"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="w-full md:w-1/2 space-y-4">
+                  <p className="font-display text-xl md:text-2xl text-foreground leading-relaxed">
+                    "{quote}"
+                  </p>
+                  <p className="text-muted-foreground font-light leading-relaxed">
+                    {sub}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Savoy No Se Explica, Se Vive */}
+      <section className="py-20 px-6 bg-card/30">
+        <div className="max-w-4xl mx-auto">
+          <motion.div {...fadeUp} className="text-center mb-12">
+            <h2 className="font-display text-3xl md:text-4xl gold-text-gradient tracking-wider mb-4">
+              Más Que Un Bar
+            </h2>
+            <div className="art-deco-line max-w-xs mx-auto mb-6" />
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+            <motion.div {...stagger} className="relative overflow-hidden rounded-2xl">
+              <img
+                src="/images/savoy-rincon.jpg"
+                alt="Un rincón para los que no buscan lo de siempre"
+                className="w-full aspect-[3/4] object-cover"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-6">
+                <p className="font-display text-lg text-white leading-relaxed">
+                  Un rincón para los que no buscan lo de siempre.
+                </p>
+                <p className="text-white/70 text-sm mt-2 font-light">
+                  Para los que prefieren música que se siente, copas bien servidas y noches que no se parecen a ninguna otra.
+                </p>
+              </div>
+            </motion.div>
+
+            <motion.div {...stagger} transition={{ delay: 0.1 }} className="relative overflow-hidden rounded-2xl">
+              <img
+                src="/images/savoy-vermut.jpg"
+                alt="La hora del vermut"
+                className="w-full aspect-[3/4] object-cover"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-6">
+                <p className="font-display text-lg text-white leading-relaxed">
+                  La hora del vermut siempre apetece.
+                </p>
+                <p className="text-white/70 text-sm mt-2 font-light">
+                  No es una hora… es una actitud 🥃 Vermut bien frío, gildas que abren el apetito y ese ambiente que te engancha sin darte cuenta.
+                </p>
+              </div>
+            </motion.div>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {highlights.map(({ icon: Icon, title, desc }, i) => (
@@ -141,6 +237,47 @@ const Promo = () => {
                 </div>
                 <h3 className="font-display text-lg text-foreground mb-3">{title}</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed font-light">{desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Galería — Vibe */}
+      <section className="py-20 px-6">
+        <div className="max-w-6xl mx-auto">
+          <motion.div {...fadeUp} className="text-center mb-12">
+            <h2 className="font-display text-3xl md:text-4xl gold-text-gradient tracking-wider mb-4">
+              Savoy No Se Explica, Se Vive
+            </h2>
+            <div className="art-deco-line max-w-xs mx-auto mb-6" />
+            <p className="text-muted-foreground font-light max-w-2xl mx-auto">
+              Un café si vienes temprano. Una copa si vienes tarde. Y si vienes sin plan… mejor todavía.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {[
+              { src: '/images/savoy-ha-vuelto.jpg', alt: 'Savoy ha vuelto al centro de Sanlúcar' },
+              { src: '/images/savoy-apertura.jpg', alt: 'Apertura de Savoy' },
+              { src: '/images/savoy-semana-santa.jpg', alt: 'Semana Santa en Savoy con Perico The Long' },
+              { src: '/images/savoy-gracias.jpg', alt: 'GRACIAS por el reencuentro' },
+              { src: '/images/savoy-cafe-copa.jpg', alt: 'Un café o una copa en Sanlúcar' },
+              { src: '/images/savoy-hoy-es-todo.jpg', alt: 'Hoy es todo vuestro' },
+            ].map(({ src, alt }, i) => (
+              <motion.div
+                key={src}
+                {...stagger}
+                transition={{ delay: i * 0.08 }}
+                className="relative overflow-hidden rounded-xl group"
+              >
+                <img
+                  src={src}
+                  alt={alt}
+                  className="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gold/0 group-hover:bg-gold/10 transition-colors duration-300" />
               </motion.div>
             ))}
           </div>
@@ -190,7 +327,7 @@ const Promo = () => {
         </div>
       </section>
 
-      {/* Ubicación y Horario */}
+      {/* Ubicación y Contacto */}
       <section className="py-20 px-6">
         <div className="max-w-2xl mx-auto">
           <motion.div {...fadeUp} className="text-center mb-12">
@@ -206,8 +343,8 @@ const Promo = () => {
                 <MapPin size={22} className="text-gold" />
               </div>
               <div>
-                <p className="font-display text-foreground">Puerto de Gandía</p>
-                <p className="text-muted-foreground text-sm">Valencia, España</p>
+                <p className="font-display text-foreground">Centro de Sanlúcar</p>
+                <p className="text-muted-foreground text-sm">Sanlúcar de Barrameda, Cádiz</p>
               </div>
             </div>
 
@@ -217,17 +354,21 @@ const Promo = () => {
               </div>
               <div>
                 <p className="font-display text-foreground">Horario</p>
-                <p className="text-muted-foreground text-sm">Jueves a Domingo · 20:00 – 03:00</p>
+                <p className="text-muted-foreground text-sm">Abierto todos los días · A partir de las 16:00</p>
               </div>
             </div>
 
             <div className="flex items-center gap-4 p-5 rounded-xl bg-card border border-border">
               <div className="w-12 h-12 rounded-full bg-gold/10 flex items-center justify-center shrink-0">
-                <Phone size={22} className="text-gold" />
+                <Instagram size={22} className="text-gold" />
               </div>
               <div>
-                <p className="font-display text-foreground">Reservas</p>
-                <p className="text-muted-foreground text-sm">Reserva directamente desde la app o llámanos</p>
+                <p className="font-display text-foreground">Síguenos</p>
+                <p className="text-muted-foreground text-sm">
+                  <a href="https://www.instagram.com/savoy_pg" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">
+                    @savoy_pg
+                  </a> · Momentos que no se explican, se viven
+                </p>
               </div>
             </div>
           </motion.div>
@@ -301,7 +442,7 @@ const Promo = () => {
           </div>
           <div className="art-deco-line mb-4" />
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground/60">
-            <span>© {new Date().getFullYear()} Savoy Cocktail Bar · Puerto de Gandía</span>
+            <span>&copy; {new Date().getFullYear()} Savoy Cocktail Bar &middot; Sanlúcar de Barrameda</span>
             <span className="flex items-center gap-1">Hecho con <Heart size={12} className="text-gold" /> y buen gusto</span>
           </div>
         </div>

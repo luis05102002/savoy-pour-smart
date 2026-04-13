@@ -2,12 +2,14 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const ALLOWED_ORIGINS = [
   "https://savoy-by-pg.lovable.app",
+  "https://savoy-pour-smart.lovable.app",
   "http://localhost:5173",
   "http://localhost:3000",
+  "http://localhost:8080",
 ];
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "", // Set dynamically per request
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
@@ -15,8 +17,9 @@ const corsHeaders = {
 function getAllowedOrigin(req: Request): string {
   const origin = req.headers.get("origin") || "";
   if (ALLOWED_ORIGINS.includes(origin)) return origin;
-  if (origin.endsWith(".lovable.app") || origin.endsWith(".lovable.app")) return origin;
-  return ALLOWED_ORIGINS[0];
+  // Only allow lovable.app subdomains that are preview builds for this project
+  if (origin.match(/^https:\/\/[a-z0-9-]+--savoy(-pour-smart|-by-pg)?\.lovable\.app$/)) return origin;
+  return ""; // Block unknown origins
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
