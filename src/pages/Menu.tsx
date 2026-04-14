@@ -66,6 +66,7 @@ const Menu = () => {
                 onClick={() => setShowScanner(true)}
                 className="w-8 h-8 rounded-full border border-gold/30 flex items-center justify-center text-gold hover:bg-gold/10 transition-colors"
                 title="Escanear QR de mesa"
+                aria-label="Escanear QR de mesa"
               >
                 <ScanLine size={16} />
               </button>

@@ -45,6 +45,7 @@ const playCallSound = async () => {
         osc.stop(s + 0.2);
       }
     }
+  // eslint-disable-next-line no-empty
   } catch {}
 };
 
@@ -83,8 +84,9 @@ export const useWaiterCalls = () => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       return { success: true, data };
-    } catch (err: any) {
-      return { success: false, error: err.message || 'Error al llamar al camarero' };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al llamar al camarero';
+      return { success: false, error: msg };
     }
   }, []);
 

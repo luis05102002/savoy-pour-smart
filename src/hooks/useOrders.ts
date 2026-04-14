@@ -92,6 +92,7 @@ const playNotificationSound = async () => {
     if ('vibrate' in navigator) {
       navigator.vibrate([300, 100, 300, 100, 300, 200, 500, 100, 500]);
     }
+  // eslint-disable-next-line no-empty
   } catch {}
 };
 
@@ -135,7 +136,7 @@ export const useRealtimeOrders = () => {
   useEffect(() => {
     if (!session) return;
     fetchOrders();
-  }, [fetchOrders]);
+  }, [fetchOrders, session]);
 
   useEffect(() => {
     if (!session) return;
@@ -148,13 +149,13 @@ export const useRealtimeOrders = () => {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'orders' },
         (payload) => {
-          const o = payload.new as any;
+          const o = payload.new as Record<string, unknown>;
           const order = {
-            id: o.id,
-            tableNumber: o.table_number,
+            id: o.id as string,
+            tableNumber: o.table_number as number,
             items: o.items as unknown as OrderItem[],
             status: o.status as 'pending' | 'preparing' | 'served' | 'paid',
-            createdAt: new Date(o.created_at),
+            createdAt: new Date(o.created_at as string),
             total: Number(o.total),
           };
 
@@ -192,8 +193,8 @@ export const useRealtimeOrders = () => {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'orders' },
         (payload) => {
-          const o = payload.new as any;
-          updateOrderInStore(o.id, o.status);
+          const o = payload.new as Record<string, unknown>;
+          updateOrderInStore(o.id as string, o.status as 'pending' | 'preparing' | 'served' | 'paid');
         }
       )
       .subscribe();
@@ -201,13 +202,14 @@ export const useRealtimeOrders = () => {
     return () => {
       supabase.removeChannel(channel);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addOrder, updateOrderInStore, session]);
 
   const updateOrderStatus = async (orderId: string, status: string) => {
     // RLS policies enforce admin/staff role on the backend
     // ProtectedRoute with requireAdmin already gates the Dashboard
     const previousStatus = useOrdersStore.getState().orders.find(o => o.id === orderId)?.status;
-    updateOrderInStore(orderId, status as any);
+    updateOrderInStore(orderId, status as 'pending' | 'preparing' | 'served' | 'paid');
     const { error } = await supabase.from('orders').update({ status }).eq('id', orderId);
     if (error) {
       if (previousStatus) updateOrderInStore(orderId, previousStatus);

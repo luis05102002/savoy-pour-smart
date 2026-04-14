@@ -61,8 +61,9 @@ const Cart = () => {
       toast.success('Pedido enviado al bar', {
         description: `Mesa ${tableNumber} · ${result.total.toFixed(2)}€`,
       });
-    } catch (err: any) {
-      toast.error(err?.message || 'Error al enviar el pedido. Inténtalo de nuevo.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al enviar el pedido. Inténtalo de nuevo.';
+      toast.error(msg);
     } finally {
       setSending(false);
     }
@@ -78,12 +79,14 @@ const Cart = () => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       setBillRequested(true);
+      // eslint-disable-next-line no-empty
       try { localStorage.setItem('savoy_bill_requested', 'true'); } catch {}
       toast.success('Camarero avisado', {
         description: data?.existingCall ? 'Ya hay una llamada pendiente' : 'En breve vendrá a cobrarte',
       });
-    } catch (err: any) {
-      toast.error(err.message || 'Error al avisar al camarero');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al avisar al camarero';
+      toast.error(msg);
     } finally {
       setCalling(false);
     }
@@ -107,6 +110,7 @@ const Cart = () => {
       {/* Single unified floating button */}
       <button
         onClick={() => setOpen(true)}
+        aria-label={count > 0 ? `Abrir carrito, ${count} artículo${count !== 1 ? 's' : ''}` : 'Abrir carrito'}
         className="fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full bg-gold flex items-center justify-center shadow-lg shadow-gold/20 hover:scale-105 transition-transform"
       >
         {(tableOrders.length > 0 || count > 0) ? (
@@ -141,7 +145,7 @@ const Cart = () => {
             >
               <div className="flex items-center justify-between p-6 border-b border-border">
                 <h2 className="font-display text-xl text-gold">Tu Pedido</h2>
-                <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <button onClick={() => setOpen(false)} aria-label="Cerrar carrito" className="text-muted-foreground hover:text-foreground">
                   <X size={20} />
                 </button>
               </div>

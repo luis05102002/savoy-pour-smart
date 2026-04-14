@@ -54,6 +54,7 @@ export const useUserRole = () => {
     return () => {
       supabase.removeChannel(channel);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   return { role, roleLoading };

@@ -46,7 +46,7 @@ export const useMenuItems = () => {
 
   const addItem = useMutation({
     mutationFn: async (item: Omit<DbMenuItem, 'id' | 'sort_order'>) => {
-      const { error } = await supabase.from('menu_items').insert(item as any);
+      const { error } = await supabase.from('menu_items').insert(item);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -58,7 +58,7 @@ export const useMenuItems = () => {
 
   const updateItem = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<DbMenuItem> & { id: string }) => {
-      const { error } = await supabase.from('menu_items').update(updates as any).eq('id', id);
+      const { error } = await supabase.from('menu_items').update(updates).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {

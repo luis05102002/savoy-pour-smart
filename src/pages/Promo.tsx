@@ -17,11 +17,6 @@ import drinks10 from '@/assets/drinks/golden-night.jpg';
 import drinks11 from '@/assets/drinks/savoy-royale.jpg';
 import drinks12 from '@/assets/drinks/macallan-18.jpg';
 
-// Import imágenes de public que ahora están en src/assets
-import imgVuelve from '@/assets/savoy-vuelve.jpg';
-import imgDespierta from '@/assets/savoy-despierta.jpg';
-import imgLegado from '@/assets/savoy-legado.jpg';
-import imgRincon from '@/assets/savoy-rincon.jpg';
 import imgCafeCopa from '@/assets/savoy-cafe-copa.jpg';
 import imgGracias from '@/assets/savoy-gracias.jpg';
 import imgApertura from '@/assets/savoy-apertura.jpg';

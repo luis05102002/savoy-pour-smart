@@ -36,6 +36,7 @@ const ReservationManager = () => {
   const [filter, setFilter] = useState<string>('upcoming');
   const [staffNotesId, setStaffNotesId] = useState<string | null>(null);
   const [staffNotesText, setStaffNotesText] = useState('');
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const fetchReservations = async () => {
     setLoading(true);
@@ -47,9 +48,8 @@ const ReservationManager = () => {
 
     if (error) {
       toast.error('Error al cargar reservas');
-      console.error(error);
     } else {
-      setReservations((data as any) || []);
+      setReservations((data as Reservation[]) || []);
     }
     setLoading(false);
   };
@@ -57,9 +57,10 @@ const ReservationManager = () => {
   useEffect(() => { fetchReservations(); }, []);
 
   const updateStatus = async (id: string, status: Reservation['status']) => {
+    setUpdatingId(id);
     const { error } = await supabase
       .from('reservations')
-      .update({ status } as any)
+      .update({ status })
       .eq('id', id);
 
     if (error) {
@@ -68,13 +69,14 @@ const ReservationManager = () => {
       setReservations(prev => prev.map(r => r.id === id ? { ...r, status } : r));
       toast.success(`Reserva ${statusConfig[status].label.toLowerCase()}`);
     }
+    setUpdatingId(null);
   };
 
   const saveStaffNotes = async () => {
     if (!staffNotesId) return;
     const { error } = await supabase
       .from('reservations')
-      .update({ staff_notes: staffNotesText.trim() || null } as any)
+      .update({ staff_notes: staffNotesText.trim() || null })
       .eq('id', staffNotesId);
 
     if (error) {
@@ -218,6 +220,11 @@ const ReservationManager = () => {
                         placeholder="Notas internas del staff..."
                         className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gold transition-colors resize-none"
                       />
+                      <div className="flex justify-end -mt-1">
+                        <span className={`text-xs ${staffNotesText.length > 450 ? 'text-warning' : 'text-muted-foreground'}`}>
+                          {staffNotesText.length}/500
+                        </span>
+                      </div>
                       <div className="flex gap-2">
                         <button onClick={saveStaffNotes} className="flex-1 py-1.5 rounded-lg bg-gold text-primary-foreground text-xs font-medium">
                           Guardar
@@ -237,13 +244,18 @@ const ReservationManager = () => {
                       <>
                         <button
                           onClick={() => updateStatus(r.id, 'confirmed')}
-                          className="flex-1 py-2 rounded-lg bg-gold text-primary-foreground text-sm font-medium flex items-center justify-center gap-1.5"
+                          disabled={updatingId === r.id}
+                          className="flex-1 py-2 rounded-lg bg-gold text-primary-foreground text-sm font-medium flex items-center justify-center gap-1.5 disabled:opacity-60"
                         >
-                          <Check size={14} /> Confirmar
+                          {updatingId === r.id
+                            ? <div className="w-3.5 h-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                            : <Check size={14} />}
+                          Confirmar
                         </button>
                         <button
                           onClick={() => updateStatus(r.id, 'rejected')}
-                          className="py-2 px-3 rounded-lg border border-destructive/40 text-destructive text-sm flex items-center gap-1.5"
+                          disabled={updatingId === r.id}
+                          className="py-2 px-3 rounded-lg border border-destructive/40 text-destructive text-sm flex items-center gap-1.5 disabled:opacity-60"
                         >
                           <X size={14} /> Rechazar
                         </button>
@@ -252,15 +264,20 @@ const ReservationManager = () => {
                     {r.status === 'confirmed' && (
                       <button
                         onClick={() => updateStatus(r.id, 'completed')}
-                        className="flex-1 py-2 rounded-lg bg-gold text-primary-foreground text-sm font-medium flex items-center justify-center gap-1.5"
+                        disabled={updatingId === r.id}
+                        className="flex-1 py-2 rounded-lg bg-gold text-primary-foreground text-sm font-medium flex items-center justify-center gap-1.5 disabled:opacity-60"
                       >
-                        <Check size={14} /> Completar
+                        {updatingId === r.id
+                          ? <div className="w-3.5 h-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                          : <Check size={14} />}
+                        Completar
                       </button>
                     )}
                     {!['completed', 'cancelled', 'rejected'].includes(r.status) && (
                       <button
                         onClick={() => updateStatus(r.id, 'cancelled')}
-                        className="py-2 px-3 rounded-lg border border-border text-muted-foreground text-xs hover:text-foreground"
+                        disabled={updatingId === r.id}
+                        className="py-2 px-3 rounded-lg border border-border text-muted-foreground text-xs hover:text-foreground disabled:opacity-60"
                       >
                         Cancelar
                       </button>
