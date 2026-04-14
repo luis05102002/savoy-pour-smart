@@ -6,6 +6,7 @@ import { submitOrder } from '@/hooks/useOrders';
 import { supabase } from '@/integrations/supabase/client';
 import type { Order } from '@/data/menu';
 import { toast } from 'sonner';
+import { IVA_DIVISOR } from '@/lib/constants';
 
 const Cart = () => {
   const [open, setOpen] = useState(false);
@@ -98,7 +99,7 @@ const Cart = () => {
     total: tableTotal,
   } : null;
 
-  const subtotal = consolidatedOrder ? consolidatedOrder.total / 1.10 : 0;
+  const subtotal = consolidatedOrder ? consolidatedOrder.total / IVA_DIVISOR : 0;
   const iva = consolidatedOrder ? consolidatedOrder.total - subtotal : 0;
 
   return (

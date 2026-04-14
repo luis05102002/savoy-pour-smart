@@ -15,7 +15,7 @@ const Menu = () => {
   const navigate = useNavigate();
   const setTableNumber = useCartStore((s) => s.setTableNumber);
   const tableNumber = useCartStore((s) => s.tableNumber);
-  const { menuItems, categories, isLoading } = useMenuItems();
+  const { menuItems, categories, isLoading, isError, refetch } = useMenuItems();
   const [showScanner, setShowScanner] = useState(false);
 
   useEffect(() => {
@@ -102,6 +102,19 @@ const Menu = () => {
       <main className="max-w-2xl mx-auto px-4 py-8">
         {isLoading ? (
           <p className="text-center text-muted-foreground py-12">Cargando carta...</p>
+        ) : isError ? (
+          <div className="text-center py-16 space-y-4">
+            <p className="font-display text-destructive text-lg">No se pudo cargar la carta</p>
+            <p className="text-muted-foreground text-sm">Comprueba tu conexión e inténtalo de nuevo</p>
+            <button
+              onClick={() => refetch()}
+              className="mt-2 px-6 py-2 rounded-lg border border-gold/40 text-gold hover:bg-gold/10 transition-colors text-sm"
+            >
+              Reintentar
+            </button>
+          </div>
+        ) : groupedItems.length === 0 ? (
+          <p className="text-center text-muted-foreground py-12">La carta está vacía</p>
         ) : (
           groupedItems.map((group) => (
             <MenuCategory key={group.category} category={group.category} items={group.items} />

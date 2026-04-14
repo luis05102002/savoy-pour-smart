@@ -6,6 +6,16 @@ import { useAuth } from '@/hooks/useAuth';
 import type { OrderItem } from '@/data/menu';
 import { toast } from 'sonner';
 
+// Singleton AudioContext reutilizable — evita crear uno nuevo por cada notificación
+let sharedAudioCtx: AudioContext | null = null;
+
+function getAudioContext(): AudioContext {
+  if (!sharedAudioCtx || sharedAudioCtx.state === 'closed') {
+    sharedAudioCtx = new AudioContext();
+  }
+  return sharedAudioCtx;
+}
+
 // Update browser tab title with pending orders count
 const updateTabBadge = (pendingCount: number) => {
   const base = 'Savoy · Panel';
@@ -46,10 +56,10 @@ const updateTabBadge = (pendingCount: number) => {
   link.href = canvas.toDataURL();
 };
 
-// Play LOUD notification — creates fresh AudioContext each time
+// Play LOUD notification — reusa el AudioContext singleton para evitar memory leaks
 const playNotificationSound = async () => {
   try {
-    const ctx = new AudioContext();
+    const ctx = getAudioContext();
     await ctx.resume();
 
     const now = ctx.currentTime;
@@ -82,7 +92,6 @@ const playNotificationSound = async () => {
     if ('vibrate' in navigator) {
       navigator.vibrate([300, 100, 300, 100, 300, 200, 500, 100, 500]);
     }
-    setTimeout(() => ctx.close(), 5000);
   } catch {}
 };
 
@@ -197,8 +206,13 @@ export const useRealtimeOrders = () => {
   const updateOrderStatus = async (orderId: string, status: string) => {
     // RLS policies enforce admin/staff role on the backend
     // ProtectedRoute with requireAdmin already gates the Dashboard
+    const previousStatus = useOrdersStore.getState().orders.find(o => o.id === orderId)?.status;
     updateOrderInStore(orderId, status as any);
-    await supabase.from('orders').update({ status }).eq('id', orderId);
+    const { error } = await supabase.from('orders').update({ status }).eq('id', orderId);
+    if (error) {
+      if (previousStatus) updateOrderInStore(orderId, previousStatus);
+      toast.error('Error al actualizar el pedido');
+    }
   };
 
   return { orders, updateOrderStatus, requestPermission, permission, refreshOrders: fetchOrders, newOrderAlert, dismissAlert: () => setNewOrderAlert(null) };

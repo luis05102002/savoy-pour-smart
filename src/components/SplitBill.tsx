@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, UserPlus, UserMinus, Download, Users } from 'lucide-react';
 import type { Order } from '@/data/menu';
+import { IVA_DIVISOR } from '@/lib/constants';
 
 interface SplitBillProps {
   orders: Order[];
@@ -199,7 +200,7 @@ const SplitBill = ({ orders, tableNumber, onClose }: SplitBillProps) => {
           <div className="space-y-2">
             <h4 className="text-sm font-medium text-foreground">Resumen por comensal</h4>
             {dinerNames.map((name, i) => {
-              const subtotal = dinerTotals[i] / 1.10;
+              const subtotal = dinerTotals[i] / IVA_DIVISOR;
               const iva = dinerTotals[i] - subtotal;
               return (
                 <div key={i} className={`p-3 rounded-lg border ${dinerColors[i % dinerColors.length]}`}>

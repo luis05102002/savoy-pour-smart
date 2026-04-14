@@ -27,7 +27,7 @@ const toMenuItem = (db: DbMenuItem): MenuItem => ({
 export const useMenuItems = () => {
   const queryClient = useQueryClient();
 
-  const { data: dbItems = [], isLoading } = useQuery({
+  const { data: dbItems = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['menu_items'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -37,6 +37,8 @@ export const useMenuItems = () => {
       if (error) throw error;
       return data as DbMenuItem[];
     },
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
   });
 
   const menuItems: MenuItem[] = dbItems.filter(i => i.available).map(toMenuItem);
@@ -78,5 +80,5 @@ export const useMenuItems = () => {
     onError: () => toast.error('Error al eliminar'),
   });
 
-  return { dbItems, menuItems, categories, isLoading, addItem, updateItem, deleteItem };
+  return { dbItems, menuItems, categories, isLoading, isError, refetch, addItem, updateItem, deleteItem };
 };

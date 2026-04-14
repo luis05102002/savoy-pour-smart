@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { History, X, Clock, Receipt, CreditCard, Download, Users } from 'lucide-react';
 import type { Order } from '@/data/menu';
 import SplitBill from '@/components/SplitBill';
+import { IVA_DIVISOR } from '@/lib/constants';
 
 interface TableHistoryProps {
   orders: Order[];
@@ -61,7 +62,7 @@ const TableHistory = ({ orders, onCloseTable }: TableHistoryProps) => {
     }
   });
 
-  const subtotal = tableTotal / 1.10;
+  const subtotal = tableTotal / IVA_DIVISOR;
   const iva = tableTotal - subtotal;
 
   return (

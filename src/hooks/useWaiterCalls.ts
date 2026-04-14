@@ -4,6 +4,16 @@ import { useAuth } from './useAuth';
 import { usePushNotifications } from './usePushNotifications';
 import { toast } from 'sonner';
 
+// Singleton AudioContext reutilizable — evita crear uno nuevo por cada llamada al camarero
+let sharedCallAudioCtx: AudioContext | null = null;
+
+function getCallAudioContext(): AudioContext {
+  if (!sharedCallAudioCtx || sharedCallAudioCtx.state === 'closed') {
+    sharedCallAudioCtx = new AudioContext();
+  }
+  return sharedCallAudioCtx;
+}
+
 interface WaiterCall {
   id: string;
   table_number: number;
@@ -12,10 +22,10 @@ interface WaiterCall {
   created_at: string;
 }
 
-// Play alert sound that works every time (new AudioContext per call)
+// Play alert sound — reusa el AudioContext singleton para evitar memory leaks
 const playCallSound = async () => {
   try {
-    const ctx = new AudioContext();
+    const ctx = getCallAudioContext();
     await ctx.resume();
 
     const now = ctx.currentTime;
@@ -35,8 +45,6 @@ const playCallSound = async () => {
         osc.stop(s + 0.2);
       }
     }
-    // Close context after sound finishes
-    setTimeout(() => ctx.close(), 4000);
   } catch {}
 };
 

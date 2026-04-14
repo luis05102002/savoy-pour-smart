@@ -2,6 +2,16 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Pencil, Trash2, X, Save, Eye, EyeOff } from 'lucide-react';
 import { useMenuItems, type DbMenuItem } from '@/hooks/useMenuItems';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const defaultCategories = [
   'Cócteles Signature',
@@ -26,6 +36,7 @@ const MenuManager = () => {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [filterCat, setFilterCat] = useState<string>('all');
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const categories = [...new Set(dbItems.map(i => i.category))];
   const filtered = filterCat === 'all' ? dbItems : dbItems.filter(i => i.category === filterCat);
@@ -55,8 +66,9 @@ const MenuManager = () => {
     setShowForm(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('¿Eliminar este producto?')) deleteItem.mutate(id);
+  const confirmDelete = () => {
+    if (deleteConfirmId) deleteItem.mutate(deleteConfirmId);
+    setDeleteConfirmId(null);
   };
 
   if (isLoading) return <p className="text-muted-foreground text-center py-8">Cargando carta...</p>;
@@ -173,6 +185,7 @@ const MenuManager = () => {
               <button
                 onClick={() => updateItem.mutate({ id: item.id, available: !item.available })}
                 className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                aria-label={item.available ? 'Ocultar producto' : 'Mostrar producto'}
                 title={item.available ? 'Ocultar' : 'Mostrar'}
               >
                 {item.available ? <Eye size={14} /> : <EyeOff size={14} />}
@@ -180,12 +193,14 @@ const MenuManager = () => {
               <button
                 onClick={() => handleEdit(item)}
                 className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Editar producto"
               >
                 <Pencil size={14} />
               </button>
               <button
-                onClick={() => handleDelete(item.id)}
+                onClick={() => setDeleteConfirmId(item.id)}
                 className="p-1.5 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
+                aria-label="Eliminar producto"
               >
                 <Trash2 size={14} />
               </button>
@@ -193,6 +208,27 @@ const MenuManager = () => {
           </div>
         ))}
       </div>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteConfirmId !== null} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El producto se eliminará permanentemente de la carta.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

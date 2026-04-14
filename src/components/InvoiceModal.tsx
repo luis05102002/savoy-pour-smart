@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Printer, X } from 'lucide-react';
 import type { Order } from '@/data/menu';
+import { IVA_DIVISOR, IVA_RATE } from '@/lib/constants';
 
 interface InvoiceModalProps {
   order: Order;
@@ -60,8 +61,8 @@ const InvoiceModal = ({ order, onClose }: InvoiceModalProps) => {
         `).join('')}
         <hr class="divider">
         <div class="total-section">
-          <div class="total-row"><span>Subtotal</span><span>${(order.total / 1.10).toFixed(2)}€</span></div>
-          <div class="total-row"><span>IVA (10%)</span><span>${(order.total - order.total / 1.10).toFixed(2)}€</span></div>
+          <div class="total-row"><span>Subtotal</span><span>${(order.total / IVA_DIVISOR).toFixed(2)}€</span></div>
+          <div class="total-row"><span>IVA (${(IVA_RATE * 100).toFixed(0)}%)</span><span>${(order.total - order.total / IVA_DIVISOR).toFixed(2)}€</span></div>
           <div class="total-row grand"><span>Total</span><span>${order.total.toFixed(2)}€</span></div>
         </div>
         <div class="footer">Gracias por su visita · Savoy Cocktail Bar</div>
@@ -144,11 +145,11 @@ const InvoiceModal = ({ order, onClose }: InvoiceModalProps) => {
             <div className="space-y-1">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span className="text-foreground">{(order.total / 1.10).toFixed(2)}€</span>
+                <span className="text-foreground">{(order.total / IVA_DIVISOR).toFixed(2)}€</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">IVA (10%)</span>
-                <span className="text-foreground">{(order.total - order.total / 1.10).toFixed(2)}€</span>
+                <span className="text-muted-foreground">IVA ({(IVA_RATE * 100).toFixed(0)}%)</span>
+                <span className="text-foreground">{(order.total - order.total / IVA_DIVISOR).toFixed(2)}€</span>
               </div>
               <div className="flex justify-between font-display text-xl mt-2">
                 <span className="text-foreground">Total</span>
