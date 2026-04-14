@@ -52,17 +52,17 @@ const storyMoments = [
   {
     image: drinks1,
     quote: 'Después de muchos años en silencio, este sitio vuelve a latir. Misma esencia. Nueva energía.',
-    sub: 'Aquí se-brindó, se-bailó, se-vivió. Y ahora… se vuelve a-empezar.',
+    sub: 'Aquí se brindó, se bailó, se vivió. Y ahora… se vuelve a empezar.',
   },
   {
     image: drinks2,
-    quote: 'Savoy despierta. Con otra luz, otras ganas y la misma alma que loizo único.',
-    sub: 'Lo-que-fue, vuelve a-ser. Y lo-que-viene… promete días que no se-cuentan, se-sienten.',
+    quote: 'Savoy despierta. Con otra luz, otras ganas y la misma alma que lo hizo único.',
+    sub: 'Lo que fue, vuelve a ser. Y lo que viene… promete días que no se cuentan, se sienten.',
   },
   {
     image: drinks3,
     quote: 'En 1988, Pigüi estaba detrás de esta barra. Ahora, en 2026, vuelve a hacerlo… junto a su hijo.',
-    sub: 'Un-legado-familiar que continúa, con la misma esencia de siempre y muchas ganas de escribir nuevos días y noches en Savoy.',
+    sub: 'Un legado familiar que continúa, con la misma esencia de siempre y muchas ganas de escribir nuevos días y noches en Savoy.',
   },
 ];
 
@@ -292,6 +292,33 @@ const Promo = () => {
         </div>
       </section>
 
+      {/* Reservation CTA */}
+      <section className="py-16 px-6">
+        <div className="max-w-2xl mx-auto">
+          <motion.div
+            {...fadeUp}
+            className="text-center p-10 rounded-2xl border border-gold/30 bg-card/60 backdrop-blur-sm relative overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-gold/5 via-transparent to-transparent pointer-events-none" />
+            <CalendarDays size={36} className="text-gold mx-auto mb-4 relative z-10" />
+            <h2 className="font-display text-2xl md:text-3xl gold-text-gradient tracking-wider mb-3 relative z-10">
+              Reserva Tu Mesa
+            </h2>
+            <p className="text-muted-foreground font-light mb-6 max-w-sm mx-auto relative z-10">
+              Asegura tu espacio esta noche. Confirmamos en menos de 1 hora, sin tarjeta de crédito.
+            </p>
+            <button
+              onClick={() => navigate('/reservar')}
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-lg gold-gradient text-primary-foreground font-display tracking-wider hover:opacity-90 transition-opacity animate-pulse-gold relative z-10"
+            >
+              <CalendarDays size={18} />
+              Reservar Ahora
+              <ArrowRight size={16} />
+            </button>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Carta Destacada */}
       <section className="py-20 px-6 bg-card/30">
         <div className="max-w-4xl mx-auto">
@@ -390,35 +417,6 @@ const Promo = () => {
             >
               <Instagram size={20} />
               @savoy_pg
-            </a>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Instagram CTA */}
-      <section className="py-20 px-6 bg-card/30">
-        <div className="max-w-3xl mx-auto text-center">
-          <motion.div {...fadeUp}>
-            <Instagram size={40} className="text-gold mx-auto mb-4" />
-            <h2 className="font-display text-2xl md:text-3xl gold-text-gradient tracking-wider mb-4">
-              Síguenos en Instagram
-            </h2>
-            <p className="text-muted-foreground font-light mb-2">
-              @savoy_pg
-            </p>
-            <p className="text-muted-foreground/70 text-sm font-light mb-8 max-w-md mx-auto">
-              Cócteles, momentos y noches que valen la pena recordar.
-              Etiquétanos en tus fotos con <span className="text-gold font-medium">#SavoyPG</span>
-            </p>
-            <a
-              href="https://www.instagram.com/savoy_pg"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-3 px-8 py-4 rounded-lg border border-gold/40 text-gold font-display tracking-wider hover:bg-gold/10 transition-colors"
-            >
-              <Instagram size={20} />
-              Ir a Instagram
-              <ArrowRight size={16} />
             </a>
           </motion.div>
         </div>

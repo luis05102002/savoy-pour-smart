@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ScanLine } from 'lucide-react';
+import { ScanLine, CalendarDays } from 'lucide-react';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import MenuCategory from '@/components/MenuCategory';
 import Cart from '@/components/Cart';
@@ -117,9 +117,35 @@ const Menu = () => {
         ) : groupedItems.length === 0 ? (
           <p className="text-center text-muted-foreground py-12">La carta está vacía</p>
         ) : (
-          groupedItems.map((group) => (
-            <MenuCategory key={group.category} category={group.category} items={group.items} />
-          ))
+          <>
+            {groupedItems.map((group) => (
+              <MenuCategory key={group.category} category={group.category} items={group.items} />
+            ))}
+
+            {/* Reservation CTA */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="mt-6 mb-4 p-6 rounded-2xl border border-gold/30 bg-card/60 text-center relative overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-gold/5 via-transparent to-transparent pointer-events-none" />
+              <CalendarDays size={28} className="text-gold mx-auto mb-3 relative z-10" />
+              <p className="font-display text-lg gold-text-gradient tracking-wider mb-1 relative z-10">
+                ¿Quieres disfrutarlo en mesa reservada?
+              </p>
+              <p className="text-xs text-muted-foreground mb-4 relative z-10">
+                Confirmamos en menos de 1 hora · Sin tarjeta · Cancelación gratuita
+              </p>
+              <button
+                onClick={() => navigate('/reservar')}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg gold-gradient text-primary-foreground font-display text-sm tracking-wider hover:opacity-90 transition-opacity relative z-10"
+              >
+                <CalendarDays size={16} />
+                Reservar Mesa
+              </button>
+            </motion.div>
+          </>
         )}
       </main>
 

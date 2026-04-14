@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { CalendarDays, Users, MapPin, Clock, Send, CheckCircle } from 'lucide-react';
+import { CalendarDays, Users, MapPin, Clock, CheckCircle, Zap, ShieldCheck, Ban } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import BackButton from '@/components/BackButton';
@@ -16,6 +16,12 @@ const timeSlots = Array.from({ length: 13 }, (_, i) => {
   const h = 12 + i;
   return `${h.toString().padStart(2, '0')}:00`;
 });
+
+const trustItems = [
+  { icon: Zap, text: 'Confirmación en < 1h' },
+  { icon: Ban, text: 'Sin tarjeta de crédito' },
+  { icon: ShieldCheck, text: 'Cancelación gratuita' },
+];
 
 const Reservar = () => {
   const [submitted, setSubmitted] = useState(false);
@@ -84,7 +90,7 @@ const Reservar = () => {
             <strong className="text-foreground">{form.reservation_time}h</strong>.
           </p>
           <p className="text-muted-foreground text-xs mt-4">
-            Te confirmaremos por teléfono o email en breve.
+            Te confirmaremos por teléfono o email en menos de 1 hora.
           </p>
           <div className="art-deco-line w-24 mx-auto mt-8 mb-6" />
           <BackButton to="/" label="Volver al inicio" />
@@ -101,16 +107,31 @@ const Reservar = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-6 text-center mb-8"
+          className="mt-6 text-center mb-6"
         >
           <div className="art-deco-line w-24 mx-auto mb-6" />
           <h1 className="font-display text-3xl gold-text-gradient tracking-[0.15em] uppercase">
             Reservar Mesa
           </h1>
           <p className="text-muted-foreground text-xs tracking-wider mt-2">
-            Solicita tu reserva y te confirmaremos
+            Asegura tu espacio en Savoy by PG
           </p>
           <div className="art-deco-line w-24 mx-auto mt-6" />
+        </motion.div>
+
+        {/* Trust bar */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="grid grid-cols-3 gap-2 mb-6"
+        >
+          {trustItems.map(({ icon: Icon, text }) => (
+            <div key={text} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-card border border-border/50 text-center">
+              <Icon size={16} className="text-gold" />
+              <span className="text-[10px] text-muted-foreground leading-tight">{text}</span>
+            </div>
+          ))}
         </motion.div>
 
         <motion.form
@@ -278,20 +299,22 @@ const Reservar = () => {
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-4 rounded-lg gold-gradient text-primary-foreground font-display text-lg tracking-wider hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 mt-6"
-          >
-            {loading ? (
-              <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                <Send size={18} />
-                Enviar Reserva
-              </>
-            )}
-          </button>
+          <div className="pt-2 space-y-3">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-4 rounded-lg gold-gradient text-primary-foreground font-display text-lg tracking-wider hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 animate-pulse-gold"
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+              ) : (
+                'Confirmar Reserva'
+              )}
+            </button>
+            <p className="text-center text-xs text-muted-foreground/60">
+              Gratuito · Sin compromiso · Te llamamos para confirmar
+            </p>
+          </div>
         </motion.form>
       </div>
     </div>
