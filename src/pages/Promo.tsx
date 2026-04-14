@@ -28,7 +28,7 @@ import imgApertura from '@/assets/savoy-apertura.jpg';
 import imgSemanaSanta from '@/assets/savoy-semana-santa.jpg';
 import imgVermut from '@/assets/savoy-vermut.jpg';
 import imgHaVuelto from '@/assets/savoy-ha-vuelto.jpg';
-import imgHoyEsTodo from '@/assets/savoy-hoy-es-todo.jpg';
+
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
@@ -277,7 +277,6 @@ const Promo = () => {
               { src: imgSemanaSanta, alt: 'Semana Santa en Savoy con Perico The Long' },
               { src: imgGracias, alt: 'GRACIAS por el reencuentro' },
               { src: imgCafeCopa, alt: 'Un café o una copa en Sanlúcar' },
-              { src: imgHoyEsTodo, alt: 'Hoy es todo vuestro' },
             ].map(({ src, alt }, i) => (
               <motion.div
                 key={src}
