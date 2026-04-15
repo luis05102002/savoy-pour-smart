@@ -302,7 +302,7 @@ const Dashboard = () => {
                           <button
                             onClick={async () => {
                               if (!isConnected) {
-                                toast.error('Conecta la impresora primero');
+                                toast.info('Conecta la impresora primero');
                                 return;
                               }
                               setPrintingTable(tableNum);
@@ -315,15 +315,14 @@ const Dashboard = () => {
                                   })),
                                   orderId: tableOrders[0].id,
                                 });
-                                toast.success(`Comanda Mesa ${tableNum} impresa`);
-                              } catch (err) {
-                                toast.error('Error al imprimir');
+                              } catch {
+                                // Silenciar errores
                               } finally {
                                 setPrintingTable(null);
                               }
                             }}
-                            disabled={printingTable === tableNum}
-                            className="py-2 px-3 rounded-lg border border-gold/40 text-gold text-xs hover:bg-gold/10 transition-colors disabled:opacity-50"
+                            disabled={printingTable === tableNum || !isConnected}
+                            className="py-2 px-3 rounded-lg border border-gold/40 text-gold text-xs hover:bg-gold/10 transition-colors disabled:opacity-30"
                             title="Imprimir comanda"
                           >
                             {printingTable === tableNum ? '...' : <Printer size={12} />}

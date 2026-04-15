@@ -1,32 +1,8 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 
-// Comandos ESC/POS básicos para impresoras térmicas
-const ESC = 0x1B;
-const GS = 0x1D;
-const LF = 0x0A;
-const NUL = 0x00;
-
-// Comandos ESC/POS
-const commands = {
-  INIT: new Uint8Array([ESC, 0x40]), // Initialize printer
-  ALIGN_CENTER: new Uint8Array([ESC, 0x61, 0x01]),
-  ALIGN_LEFT: new Uint8Array([ESC, 0x61, 0x00]),
-  ALIGN_RIGHT: new Uint8Array([ESC, 0x61, 0x02]),
-  BOLD_ON: new Uint8Array([ESC, 0x45, 0x01]),
-  BOLD_OFF: new Uint8Array([ESC, 0x45, 0x00]),
-  DOUBLE_HEIGHT: new Uint8Array([ESC, 0x21, 0x10]),
-  DOUBLE_WIDTH: new Uint8Array([ESC, 0x21, 0x20]),
-  NORMAL_SIZE: new Uint8Array([ESC, 0x21, 0x00]),
-  CUT_PAPER: new Uint8Array([GS, 0x56, 0x41, 0x00]), // Cut paper
-  FEED_LINES: (n: number) => new Uint8Array([ESC, 0x64, n]), // Feed n lines
-  LINE: new Uint8Array([0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4, 0xC4]),
-};
-
-interface PrinterConfig {
-  vendorId?: number;
-  productId?: number;
-}
+// Tipos de conexión soportados
+type PrinterType = 'serial' | 'bluetooth' | 'airprint' | 'share' | null;
 
 interface PrintItem {
   name: string;
@@ -35,59 +11,144 @@ interface PrintItem {
   notes?: string;
 }
 
+interface PrinterCapabilities {
+  serial: boolean;
+  bluetooth: boolean;
+  airprint: boolean;
+  share: boolean;
+}
+
+// Comandos ESC/POS básicos para impresoras térmicas USB
+const ESC = 0x1B;
+const GS = 0x1D;
+const commands = {
+  INIT: new Uint8Array([ESC, 0x40]),
+  ALIGN_CENTER: new Uint8Array([ESC, 0x61, 0x01]),
+  ALIGN_LEFT: new Uint8Array([ESC, 0x61, 0x00]),
+  BOLD_ON: new Uint8Array([ESC, 0x45, 0x01]),
+  BOLD_OFF: new Uint8Array([ESC, 0x45, 0x00]),
+  DOUBLE_HEIGHT: new Uint8Array([ESC, 0x21, 0x10]),
+  DOUBLE_WIDTH: new Uint8Array([ESC, 0x21, 0x20]),
+  NORMAL_SIZE: new Uint8Array([ESC, 0x21, 0x00]),
+  CUT_PAPER: new Uint8Array([GS, 0x56, 0x41, 0x00]),
+  FEED_LINES: (n: number) => new Uint8Array([ESC, 0x64, n]),
+};
+
 export const useThermalPrinter = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [printerType, setPrinterType] = useState<PrinterType>(null);
+  const [capabilities, setCapabilities] = useState<PrinterCapabilities>({
+    serial: false,
+    bluetooth: false,
+    airprint: false,
+    share: false,
+  });
+  
   const portRef = useRef<SerialPort | null>(null);
-  const writerRefRef = useRef<WritableStreamDefaultWriter<Uint8Array> | null>(null);
+  const writerRef = useRef<WritableStreamDefaultWriter<Uint8Array> | null>(null);
+  const bluetoothDeviceRef = useRef<BluetoothDevice | null>(null);
 
-  // Conectar a impresora térmica vía Web Serial API
+  // Detectar capacidades del dispositivo
+  useEffect(() => {
+    const caps: PrinterCapabilities = {
+      serial: 'serial' in navigator,
+      bluetooth: 'bluetooth' in navigator,
+      airprint: /iPhone|iPad|iPod|Mac/.test(navigator.userAgent),
+      share: 'share' in navigator,
+    };
+    setCapabilities(caps);
+  }, []);
+
+  // Conectar según el tipo de dispositivo
   const connect = useCallback(async () => {
-    if (!('serial' in navigator)) {
-      toast.error('Tu navegador no soporta impresión USB. Usa Chrome o Edge.');
-      return false;
-    }
-
     setIsConnecting(true);
+    
     try {
-      // Solicitar puerto serial
-      const port = await navigator.serial.requestPort({
-        filters: [
-          { usbVendorId: 0x0483 }, // STMicroelectronics (común en impresoras térmicas)
-          { usbVendorId: 0x067b }, // Prolific
-          { usbVendorId: 0x1a86 }, // QinHeng
-          { usbVendorId: 0x0416 }, // Winchiphead
-        ],
-      });
+      // iOS/macOS - Usar AirPrint/Share
+      if (capabilities.airprint) {
+        setPrinterType('airprint');
+        setIsConnected(true);
+        toast.success('Modo AirPrint listo', {
+          description: 'Se abrirá el menú de impresión nativo',
+        });
+        return true;
+      }
+      
+      // Android con Bluetooth
+      if (capabilities.bluetooth && /Android/.test(navigator.userAgent)) {
+        try {
+          const device = await navigator.bluetooth.requestDevice({
+            filters: [
+              { namePrefix: 'Printer' },
+              { namePrefix: 'POS' },
+              { services: ['000018f0-0000-1000-8000-00805f9b34fb'] }, // Servicio de impresora
+            ],
+            optionalServices: ['device_information'],
+          });
+          
+          bluetoothDeviceRef.current = device;
+          setPrinterType('bluetooth');
+          setIsConnected(true);
+          toast.success('Impresora Bluetooth conectada');
+          return true;
+        } catch (btErr) {
+          console.log('Bluetooth falló, intentando Serial...');
+        }
+      }
+      
+      // Desktop Chrome/Edge - Web Serial API
+      if (capabilities.serial) {
+        const port = await navigator.serial.requestPort({
+          filters: [
+            { usbVendorId: 0x0483 }, // STMicroelectronics
+            { usbVendorId: 0x067b }, // Prolific
+            { usbVendorId: 0x1a86 }, // QinHeng
+            { usbVendorId: 0x0416 }, // Winchiphead
+          ],
+        });
 
-      await port.open({ baudRate: 9600 });
+        await port.open({ baudRate: 9600 });
+        
+        portRef.current = port;
+        writerRef.current = port.writable?.getWriter() || null;
+        
+        setPrinterType('serial');
+        setIsConnected(true);
+        toast.success('Impresora USB conectada');
+        return true;
+      }
       
-      portRef.current = port;
-      writerRefRef.current = port.writable?.getWriter() || null;
-      
+      // Fallback - Compartir/Imprimir
+      setPrinterType('share');
       setIsConnected(true);
-      toast.success('Impresora conectada');
+      toast.info('Modo compartir activado', {
+        description: 'Se usará el diálogo nativo del sistema',
+      });
       return true;
+      
     } catch (err) {
-      console.error('Error conectando impresora:', err);
+      console.error('Error conectando:', err);
       toast.error('No se pudo conectar la impresora');
       return false;
     } finally {
       setIsConnecting(false);
     }
-  }, []);
+  }, [capabilities]);
 
-  // Desconectar impresora
+  // Desconectar
   const disconnect = useCallback(async () => {
     try {
-      if (writerRefRef.current) {
-        await writerRefRef.current.close();
-        writerRefRef.current = null;
+      if (writerRef.current) {
+        await writerRef.current.close();
+        writerRef.current = null;
       }
       if (portRef.current) {
         await portRef.current.close();
         portRef.current = null;
       }
+      bluetoothDeviceRef.current = null;
+      setPrinterType(null);
       setIsConnected(false);
       toast.success('Impresora desconectada');
     } catch (err) {
@@ -95,19 +156,159 @@ export const useThermalPrinter = () => {
     }
   }, []);
 
-  // Enviar datos a la impresora
-  const sendData = useCallback(async (data: Uint8Array) => {
-    if (!writerRefRef.current) {
-      throw new Error('Impresora no conectada');
+  // Generar texto plano del ticket
+  const generateTicketText = useCallback(({
+    tableNumber,
+    items,
+    orderId,
+    timestamp = new Date(),
+    type = 'comanda',
+  }: {
+    tableNumber: number;
+    items: PrintItem[];
+    orderId: string;
+    timestamp?: Date;
+    type?: 'comanda' | 'factura';
+  }): string => {
+    const dateStr = timestamp.toLocaleDateString('es-ES');
+    const timeStr = timestamp.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    
+    let text = '';
+    
+    if (type === 'comanda') {
+      text += '\n' + '='.repeat(32) + '\n';
+      text += '       COMANDA\n';
+      text += '='.repeat(32) + '\n\n';
+      text += `  MESA: ${tableNumber}\n\n`;
+      text += '-'.repeat(32) + '\n';
+      text += `Fecha: ${dateStr} ${timeStr}\n`;
+      text += `Pedido: #${orderId.slice(-6).toUpperCase()}\n`;
+      text += '-'.repeat(32) + '\n\n';
+      
+      for (const item of items) {
+        text += `${item.quantity}x ${item.name}\n`;
+        if (item.notes) {
+          text += `   >> ${item.notes}\n`;
+        }
+        text += '\n';
+      }
+      
+      text += '-'.repeat(32) + '\n';
+      text += '\n\n\n';
+    } else {
+      // Factura
+      text += '\n' + '='.repeat(32) + '\n';
+      text += '       SAVOY by PG\n';
+      text += '   Cocktail Bar & Lounge\n';
+      text += '  Sanlucar de Barrameda\n';
+      text += '='.repeat(32) + '\n\n';
+      text += `Mesa: ${tableNumber}\n`;
+      text += `Fecha: ${dateStr} ${timeStr}\n`;
+      text += '-'.repeat(32) + '\n\n';
+      
+      let total = 0;
+      for (const item of items) {
+        const lineTotal = (item.price || 0) * item.quantity;
+        total += lineTotal;
+        const name = item.name.slice(0, 20).padEnd(20);
+        const price = lineTotal.toFixed(2).padStart(6);
+        text += `${item.quantity}x ${name} ${price} EUR\n`;
+      }
+      
+      text += '\n' + '-'.repeat(32) + '\n';
+      text += `TOTAL: ${total.toFixed(2).toString().padStart(24)} EUR\n`;
+      text += '='.repeat(32) + '\n\n';
+      text += '  Gracias por su visita\n';
+      text += '   Instagram: @savoy_pg\n';
+      text += '\n\n\n';
     }
-    await writerRefRef.current.write(data);
+    
+    return text;
   }, []);
 
-  // Enviar texto
-  const sendText = useCallback(async (text: string) => {
+  // Imprimir por Serial (ESC/POS)
+  const printViaSerial = useCallback(async (text: string) => {
+    if (!writerRef.current) throw new Error('Impresora no conectada');
+    
     const encoder = new TextEncoder();
-    await sendData(encoder.encode(text));
-  }, [sendData]);
+    await writerRef.current.write(commands.INIT);
+    await writerRef.current.write(commands.FEED_LINES(1));
+    await writerRef.current.write(encoder.encode(text));
+    await writerRef.current.write(commands.CUT_PAPER);
+  }, []);
+
+  // Imprimir por AirPrint (iOS/macOS)
+  const printViaAirPrint = useCallback(async (text: string) => {
+    // Crear ventana de impresión nativa
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      throw new Error('No se pudo abrir ventana de impresión');
+    }
+    
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Comanda - Mesa</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+          @page { size: 80mm auto; margin: 0; }
+          body { 
+            font-family: 'Courier New', monospace; 
+            font-size: 14px; 
+            width: 80mm; 
+            padding: 5mm;
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+          }
+          @media print {
+            body { width: 80mm; }
+          }
+        </style>
+      </head>
+      <body>
+        <pre>${text}</pre>
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 1000);
+            }, 200);
+          };
+        </script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  }, []);
+
+  // Compartir vía Web Share API
+  const shareTicket = useCallback(async (text: string, title: string) => {
+    if (!navigator.share) {
+      // Fallback: copiar al portapapeles
+      await navigator.clipboard.writeText(text);
+      toast.success('Ticket copiado al portapapeles');
+      return;
+    }
+    
+    const blob = new Blob([text], { type: 'text/plain' });
+    const file = new File([blob], `${title}.txt`, { type: 'text/plain' });
+    
+    try {
+      await navigator.share({
+        title: title,
+        text: text,
+        files: [file],
+      });
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') {
+        // Si falla, copiar al portapapeles
+        await navigator.clipboard.writeText(text);
+        toast.success('Ticket copiado al portapapeles');
+      }
+    }
+  }, []);
 
   // Imprimir ticket de comanda
   const printOrderTicket = useCallback(async ({
@@ -121,71 +322,36 @@ export const useThermalPrinter = () => {
     orderId: string;
     timestamp?: Date;
   }) => {
-    if (!isConnected || !writerRefRef.current) {
+    if (!isConnected) {
       throw new Error('Impresora no conectada');
     }
 
+    const text = generateTicketText({ tableNumber, items, orderId, timestamp, type: 'comanda' });
+
     try {
-      // Inicializar impresora
-      await sendData(commands.INIT);
-      await sendData(commands.FEED_LINES(1));
-
-      // Título centrado y grande
-      await sendData(commands.ALIGN_CENTER);
-      await sendData(commands.BOLD_ON);
-      await sendData(commands.DOUBLE_HEIGHT);
-      await sendData(commands.DOUBLE_WIDTH);
-      await sendText('COMANDA\n');
-      await sendData(commands.NORMAL_SIZE);
-      await sendData(commands.BOLD_OFF);
-      await sendData(commands.FEED_LINES(1));
-
-      // Mesa
-      await sendData(commands.DOUBLE_HEIGHT);
-      await sendData(commands.BOLD_ON);
-      await sendText(`MESA ${tableNumber}\n`);
-      await sendData(commands.BOLD_OFF);
-      await sendData(commands.NORMAL_SIZE);
-      await sendData(commands.FEED_LINES(1));
-
-      // Línea separadora
-      await sendData(commands.ALIGN_LEFT);
-      await sendText('--------------------------------\n');
-
-      // Fecha y hora
-      const dateStr = timestamp.toLocaleDateString('es-ES');
-      const timeStr = timestamp.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-      await sendText(`Fecha: ${dateStr} ${timeStr}\n`);
-      await sendText(`Pedido: #${orderId.slice(-6).toUpperCase()}\n`);
-      await sendText('--------------------------------\n');
-      await sendData(commands.FEED_LINES(1));
-
-      // Items
-      for (const item of items) {
-        await sendData(commands.BOLD_ON);
-        await sendText(`${item.quantity}x ${item.name}\n`);
-        await sendData(commands.BOLD_OFF);
-        
-        if (item.notes) {
-          await sendText(`   >> ${item.notes}\n`);
-        }
-        await sendData(commands.FEED_LINES(1));
+      switch (printerType) {
+        case 'serial':
+          await printViaSerial(text);
+          break;
+        case 'bluetooth':
+          // Para Bluetooth, usar share como fallback
+          await shareTicket(text, `Comanda-Mesa-${tableNumber}`);
+          break;
+        case 'airprint':
+          await printViaAirPrint(text);
+          break;
+        case 'share':
+        default:
+          await shareTicket(text, `Comanda-Mesa-${tableNumber}`);
+          break;
       }
-
-      // Línea final
-      await sendText('--------------------------------\n');
-      await sendData(commands.FEED_LINES(2));
-
-      // Cortar papel
-      await sendData(commands.CUT_PAPER);
-
     } catch (err) {
       console.error('Error imprimiendo:', err);
       throw err;
     }
-  }, [isConnected, sendData, sendText]);
+  }, [isConnected, printerType, generateTicketText, printViaSerial, printViaAirPrint, shareTicket]);
 
-  // Imprimir precuenta/factura
+  // Imprimir factura/recibo
   const printReceipt = useCallback(async ({
     tableNumber,
     items,
@@ -197,62 +363,45 @@ export const useThermalPrinter = () => {
     total: number;
     timestamp?: Date;
   }) => {
-    if (!isConnected || !writerRefRef.current) {
+    if (!isConnected) {
       throw new Error('Impresora no conectada');
     }
 
+    const text = generateTicketText({ 
+      tableNumber, 
+      items, 
+      orderId: 'FAC-' + Date.now(), 
+      timestamp, 
+      type: 'factura' 
+    });
+
     try {
-      await sendData(commands.INIT);
-      await sendData(commands.FEED_LINES(1));
-
-      // Header
-      await sendData(commands.ALIGN_CENTER);
-      await sendData(commands.BOLD_ON);
-      await sendData(commands.DOUBLE_HEIGHT);
-      await sendText('SAVOY by PG\n');
-      await sendData(commands.NORMAL_SIZE);
-      await sendData(commands.BOLD_OFF);
-      await sendText('Cocktail Bar & Lounge\n');
-      await sendText('Sanlucar de Barrameda\n');
-      await sendData(commands.FEED_LINES(1));
-
-      // Info
-      await sendData(commands.ALIGN_LEFT);
-      await sendText(`Mesa: ${tableNumber}\n`);
-      await sendText(`Fecha: ${timestamp.toLocaleString('es-ES')}\n`);
-      await sendText('--------------------------------\n');
-
-      // Items
-      for (const item of items) {
-        const lineTotal = (item.price || 0) * item.quantity;
-        await sendText(`${item.quantity}x ${item.name.padEnd(20).slice(0, 20)} ${lineTotal.toFixed(2).padStart(6)} EUR\n`);
+      switch (printerType) {
+        case 'serial':
+          await printViaSerial(text);
+          break;
+        case 'bluetooth':
+          await shareTicket(text, `Factura-Mesa-${tableNumber}`);
+          break;
+        case 'airprint':
+          await printViaAirPrint(text);
+          break;
+        case 'share':
+        default:
+          await shareTicket(text, `Factura-Mesa-${tableNumber}`);
+          break;
       }
-
-      await sendText('--------------------------------\n');
-      
-      // Total
-      await sendData(commands.ALIGN_RIGHT);
-      await sendData(commands.BOLD_ON);
-      await sendText(`TOTAL: ${total.toFixed(2)} EUR\n`);
-      await sendData(commands.BOLD_OFF);
-      await sendData(commands.FEED_LINES(2));
-
-      // Footer
-      await sendData(commands.ALIGN_CENTER);
-      await sendText('Gracias por su visita\n');
-      await sendText('Instagram: @savoy_pg\n');
-      await sendData(commands.FEED_LINES(3));
-      await sendData(commands.CUT_PAPER);
-
     } catch (err) {
       console.error('Error imprimiendo recibo:', err);
       throw err;
     }
-  }, [isConnected, sendData, sendText]);
+  }, [isConnected, printerType, generateTicketText, printViaSerial, printViaAirPrint, shareTicket]);
 
   return {
     isConnected,
     isConnecting,
+    printerType,
+    capabilities,
     connect,
     disconnect,
     printOrderTicket,
