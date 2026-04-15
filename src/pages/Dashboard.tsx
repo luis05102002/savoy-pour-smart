@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, ChefHat, Check, Receipt, FileText, QrCode, LogOut, BarChart3, Wine, ClipboardList, History, Bell, BellOff, RefreshCw, CalendarDays, HandCoins } from 'lucide-react';
+import { Clock, ChefHat, Check, Receipt, FileText, QrCode, LogOut, BarChart3, Wine, ClipboardList, History, Bell, BellOff, RefreshCw, CalendarDays, HandCoins, Printer } from 'lucide-react';
 import { useRealtimeOrders } from '@/hooks/useOrders';
+import { useThermalPrinter } from '@/hooks/useThermalPrinter';
 import type { Order } from '@/data/menu';
 import DashboardStats from '@/components/DashboardStats';
 import SalesStats from '@/components/SalesStats';
@@ -14,6 +15,7 @@ import TableHistory from '@/components/TableHistory';
 import ReservationManager from '@/components/ReservationManager';
 import { useAuth } from '@/hooks/useAuth';
 import { useWaiterCalls } from '@/hooks/useWaiterCalls';
+import { toast } from 'sonner';
 
 const statusConfig = {
   pending: { label: 'Pendiente', icon: Clock, color: 'text-warning' },
@@ -31,9 +33,11 @@ const Dashboard = () => {
   const { orders, updateOrderStatus, requestPermission, permission, refreshOrders, newOrderAlert, dismissAlert } = useRealtimeOrders();
   const { signOut } = useAuth();
   const { calls, dismissCall } = useWaiterCalls();
+  const { isConnected, isConnecting, connect, printOrderTicket, printReceipt } = useThermalPrinter();
   const [filter, setFilter] = useState<Order['status'] | 'all'>('all');
   const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('orders');
+  const [printingTable, setPrintingTable] = useState<number | null>(null);
 
   const filtered = filter === 'all' ? orders : orders.filter((o) => o.status === filter);
 
@@ -77,6 +81,19 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
+            <button
+              onClick={connect}
+              disabled={isConnecting || isConnected}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs transition-colors ${
+                isConnected
+                  ? 'border-success/40 text-success'
+                  : 'border-gold/40 text-gold hover:bg-gold/10'
+              } disabled:opacity-50`}
+              title={isConnected ? 'Impresora conectada' : 'Conectar impresora térmica'}
+            >
+              <Printer size={14} />
+              {isConnected ? 'Conectada' : 'Conectar'}
+            </button>
             <button
               onClick={() => { refreshOrders(); }}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-muted-foreground text-xs hover:text-foreground hover:border-gold/40 transition-colors"
@@ -282,6 +299,35 @@ const Dashboard = () => {
                               → {statusConfig[nextStatus(worstOrder.status) || 'paid'].label}
                             </button>
                           )}
+                          <button
+                            onClick={async () => {
+                              if (!isConnected) {
+                                toast.error('Conecta la impresora primero');
+                                return;
+                              }
+                              setPrintingTable(tableNum);
+                              try {
+                                await printOrderTicket({
+                                  tableNumber: tableNum,
+                                  items: Array.from(consolidated.values()).map(item => ({
+                                    name: item.name,
+                                    quantity: item.quantity,
+                                  })),
+                                  orderId: tableOrders[0].id,
+                                });
+                                toast.success(`Comanda Mesa ${tableNum} impresa`);
+                              } catch (err) {
+                                toast.error('Error al imprimir');
+                              } finally {
+                                setPrintingTable(null);
+                              }
+                            }}
+                            disabled={printingTable === tableNum}
+                            className="py-2 px-3 rounded-lg border border-gold/40 text-gold text-xs hover:bg-gold/10 transition-colors disabled:opacity-50"
+                            title="Imprimir comanda"
+                          >
+                            {printingTable === tableNum ? '...' : <Printer size={12} />}
+                          </button>
                           <button
                             onClick={() => setInvoiceOrder(invoiceForTable)}
                             className="py-2 px-3 rounded-lg border border-gold/40 text-gold text-xs hover:bg-gold/10 transition-colors flex items-center gap-1"
