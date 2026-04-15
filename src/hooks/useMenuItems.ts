@@ -46,6 +46,10 @@ export const useMenuItems = () => {
 
   const addItem = useMutation({
     mutationFn: async (item: Omit<DbMenuItem, 'id' | 'sort_order'>) => {
+      if (!item.name?.trim() || item.name.length > 100) throw new Error('Nombre inválido (máx. 100 caracteres)');
+      if (!item.price || item.price <= 0 || item.price > 9999) throw new Error('Precio inválido (0–9999€)');
+      if (!item.category?.trim() || item.category.length > 50) throw new Error('Categoría inválida');
+      if (item.description && item.description.length > 500) throw new Error('Descripción demasiado larga (máx. 500)');
       const { error } = await supabase.from('menu_items').insert(item);
       if (error) throw error;
     },
@@ -53,11 +57,15 @@ export const useMenuItems = () => {
       queryClient.invalidateQueries({ queryKey: ['menu_items'] });
       toast.success('Producto añadido');
     },
-    onError: () => toast.error('Error al añadir'),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : 'Error al añadir'),
   });
 
   const updateItem = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<DbMenuItem> & { id: string }) => {
+      if (updates.name !== undefined && (!updates.name.trim() || updates.name.length > 100)) throw new Error('Nombre inválido (máx. 100 caracteres)');
+      if (updates.price !== undefined && (updates.price <= 0 || updates.price > 9999)) throw new Error('Precio inválido (0–9999€)');
+      if (updates.category !== undefined && (!updates.category.trim() || updates.category.length > 50)) throw new Error('Categoría inválida');
+      if (updates.description !== undefined && updates.description.length > 500) throw new Error('Descripción demasiado larga (máx. 500)');
       const { error } = await supabase.from('menu_items').update(updates).eq('id', id);
       if (error) throw error;
     },
@@ -65,7 +73,7 @@ export const useMenuItems = () => {
       queryClient.invalidateQueries({ queryKey: ['menu_items'] });
       toast.success('Producto actualizado');
     },
-    onError: () => toast.error('Error al actualizar'),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : 'Error al actualizar'),
   });
 
   const deleteItem = useMutation({

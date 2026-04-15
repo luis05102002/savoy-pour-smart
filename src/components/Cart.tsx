@@ -11,14 +11,9 @@ import { IVA_DIVISOR } from '@/lib/constants';
 const Cart = () => {
   const [open, setOpen] = useState(false);
   const [showBill, setShowBill] = useState(false);
-  // Persist billRequested in localStorage so refreshing doesn't allow duplicate requests
-  const [billRequested, setBillRequested] = useState(() => {
-    try {
-      return localStorage.getItem('savoy_bill_requested') === 'true';
-    } catch {
-      return false;
-    }
-  });
+  // Server-side rate limiting (send-waiter-call Edge Function) prevents duplicate calls.
+  // No need to persist in localStorage — component state is sufficient.
+  const [billRequested, setBillRequested] = useState(false);
   const [calling, setCalling] = useState(false);
   const { items, tableNumber, tableOrders, updateQuantity, removeItem, clearCart, getTotal, updateNotes, addTableOrder, getTableTotal } = useCartStore();
   const [sending, setSending] = useState(false);
@@ -79,8 +74,6 @@ const Cart = () => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       setBillRequested(true);
-      // eslint-disable-next-line no-empty
-      try { localStorage.setItem('savoy_bill_requested', 'true'); } catch {}
       toast.success('Camarero avisado', {
         description: data?.existingCall ? 'Ya hay una llamada pendiente' : 'En breve vendrá a cobrarte',
       });
