@@ -272,6 +272,7 @@ const Promo = () => {
               { src: imgSemanaSanta, alt: 'Semana Santa en Savoy con Perico The Long' },
               { src: imgGracias, alt: 'GRACIAS por el reencuentro' },
               { src: imgCafeCopa, alt: 'Un café o una copa en Sanlúcar' },
+              { src: drinks11, alt: 'Savoy Royale — firma de la casa' },
             ].map(({ src, alt }, i) => (
               <motion.div
                 key={src}
