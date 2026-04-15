@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Minus, Plus, X, Send, QrCode, MessageSquare, HandCoins, Receipt } from 'lucide-react';
+import { ShoppingBag, Minus, Plus, X, Send, QrCode, MessageSquare, HandCoins, Receipt, Printer } from 'lucide-react';
 import { useCartStore } from '@/store/orderStore';
 import { submitOrder } from '@/hooks/useOrders';
+import { useThermalPrinter } from '@/hooks/useThermalPrinter';
 import { supabase } from '@/integrations/supabase/client';
 import type { Order } from '@/data/menu';
 import { toast } from 'sonner';
@@ -18,6 +19,9 @@ const Cart = () => {
   const { items, tableNumber, tableOrders, updateQuantity, removeItem, clearCart, getTotal, updateNotes, addTableOrder, getTableTotal } = useCartStore();
   const [sending, setSending] = useState(false);
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
+  
+  // Impresora térmica
+  const { isConnected, isConnecting, connect, printOrderTicket } = useThermalPrinter();
 
   const total = getTotal();
   const count = items.reduce((s, i) => s + i.quantity, 0);
@@ -51,6 +55,27 @@ const Cart = () => {
       };
 
       addTableOrder(order);
+      
+      // Imprimir ticket automáticamente si hay impresora conectada
+      if (isConnected) {
+        try {
+          await printOrderTicket({
+            tableNumber,
+            items: result.items.map(item => ({
+              name: item.menuItem.name,
+              quantity: item.quantity,
+              notes: item.notes,
+            })),
+            orderId: result.id,
+          });
+          toast.success('Comanda impresa', { duration: 2000 });
+        } catch (printErr) {
+          console.error('Error imprimiendo:', printErr);
+          // No bloqueamos el flujo si falla la impresión
+          toast.error('No se pudo imprimir la comanda', { duration: 3000 });
+        }
+      }
+      
       clearCart();
       setOpen(false);
       toast.success('Pedido enviado al bar', {
@@ -138,9 +163,24 @@ const Cart = () => {
             >
               <div className="flex items-center justify-between p-6 border-b border-border">
                 <h2 className="font-display text-xl text-gold">Tu Pedido</h2>
-                <button onClick={() => setOpen(false)} aria-label="Cerrar carrito" className="text-muted-foreground hover:text-foreground">
-                  <X size={20} />
-                </button>
+                <div className="flex items-center gap-2">
+                  {/* Botón conectar impresora */}
+                  <button
+                    onClick={connect}
+                    disabled={isConnecting || isConnected}
+                    className={`p-2 rounded-lg transition-colors ${
+                      isConnected 
+                        ? 'bg-success/20 text-success' 
+                        : 'text-muted-foreground hover:text-gold hover:bg-gold/10'
+                    } disabled:opacity-50`}
+                    title={isConnected ? 'Impresora conectada' : 'Conectar impresora térmica'}
+                  >
+                    <Printer size={20} />
+                  </button>
+                  <button onClick={() => setOpen(false)} aria-label="Cerrar carrito" className="text-muted-foreground hover:text-foreground">
+                    <X size={20} />
+                  </button>
+                </div>
               </div>
 
               {/* Previous orders summary - clickable to show full bill */}
