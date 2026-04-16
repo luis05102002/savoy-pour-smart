@@ -208,8 +208,8 @@ export const useRealtimeOrders = () => {
   }, [addOrder, updateOrderInStore, session]);
 
   const updateOrderStatus = async (orderId: string, status: string) => {
-    // Client-side role check for defense-in-depth
-    if (role !== 'admin' && role !== 'staff') {
+    // Client-side role check for defense-in-depth (skip while loading)
+    if (role !== null && role !== 'admin' && role !== 'staff') {
       toast.error('No tienes permisos para actualizar pedidos');
       return;
     }

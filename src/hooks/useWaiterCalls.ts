@@ -71,14 +71,14 @@ export const useWaiterCalls = () => {
   }, [session]);
 
   const dismissCall = useCallback(async (id: string) => {
-    // Client-side role check for defense-in-depth
-    if (role !== 'admin' && role !== 'staff') {
+    // Client-side role check for defense-in-depth (skip while loading)
+    if (role !== null && role !== 'admin' && role !== 'staff') {
       toast.error('No tienes permisos para atender llamadas');
       return;
     }
     await supabase.from('waiter_calls').update({ status: 'attended' }).eq('id', id);
     setCalls(prev => prev.filter(c => c.id !== id));
-  }, []);
+  }, [role]);
 
   const callWaiter = useCallback(async (tableNumber: number, type: string = 'payment') => {
     try {
