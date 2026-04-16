@@ -188,7 +188,7 @@ const Dashboard = () => {
                     <div className="flex items-center gap-2">
                       <HandCoins size={18} className="text-gold" />
                       <span className="font-display text-gold text-sm">Mesa {call.table_number}</span>
-                      <span className="text-xs text-muted-foreground">pide la cuenta</span>
+                      <span className="text-xs text-muted-foreground">{call.type === 'payment' ? 'pide la cuenta' : 'llama al camarero'}</span>
                     </div>
                     <button
                       onClick={() => dismissCall(call.id)}

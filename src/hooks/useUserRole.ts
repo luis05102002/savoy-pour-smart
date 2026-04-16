@@ -1,16 +1,43 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
 type UserRole = 'admin' | 'staff' | null;
 
-// Track active subscriptions to prevent duplicate channel registrations
-const channelRef = { channel: null as ReturnType<typeof supabase.channel> | null, userId: null as string | null, count: 0 };
+// Shared channel + listeners so all useUserRole consumers get realtime updates
+const channelState = {
+  channel: null as ReturnType<typeof supabase.channel> | null,
+  userId: null as string | null,
+  refCount: 0,
+  listeners: new Set<() => void>(),
+};
 
 export const useUserRole = () => {
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   const [role, setRole] = useState<UserRole>(null);
   const [roleLoading, setRoleLoading] = useState(true);
+
+  const fetchRole = useCallback(async () => {
+    if (!user) {
+      setRole(null);
+      setRoleLoading(false);
+      return;
+    }
+
+    setRoleLoading(true);
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (!error && data) {
+      setRole(data.role as UserRole);
+    } else {
+      setRole(null);
+    }
+    setRoleLoading(false);
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user) {
@@ -19,75 +46,55 @@ export const useUserRole = () => {
       return;
     }
 
-    const fetchRole = async () => {
-      setRoleLoading(true);
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (!error && data) {
-        setRole(data.role as UserRole);
-      } else {
-        setRole(null);
-      }
-      setRoleLoading(false);
-    };
-
+    // Always fetch role on mount
     fetchRole();
 
-    // Reuse existing channel if same user, create new one if user changed
-    if (channelRef.channel && channelRef.userId === user.id) {
-      channelRef.count++;
-      return () => {
-        channelRef.count--;
-        if (channelRef.count <= 0) {
-          supabase.removeChannel(channelRef.channel!);
-          channelRef.channel = null;
-          channelRef.userId = null;
-          channelRef.count = 0;
-        }
-      };
+    // Register this consumer's callback
+    channelState.listeners.add(fetchRole);
+
+    // Create channel if not exists or user changed
+    if (!channelState.channel || channelState.userId !== user.id) {
+      // Clean up old channel if user changed
+      if (channelState.channel) {
+        supabase.removeChannel(channelState.channel);
+      }
+
+      const channel = supabase
+        .channel('user-role-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'user_roles',
+            filter: `user_id=eq.${user.id}`,
+          },
+          () => {
+            // Notify ALL consumers to refetch
+            channelState.listeners.forEach(fn => fn());
+          }
+        )
+        .subscribe();
+
+      channelState.channel = channel;
+      channelState.userId = user.id;
+      channelState.refCount = 1;
+    } else {
+      channelState.refCount++;
     }
-
-    // Clean up old channel if user changed
-    if (channelRef.channel) {
-      supabase.removeChannel(channelRef.channel);
-    }
-
-    // Subscribe to realtime changes on user_roles for this user
-    const channel = supabase
-      .channel('user-role-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'user_roles',
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          fetchRole();
-        }
-      )
-      .subscribe();
-
-    channelRef.channel = channel;
-    channelRef.userId = user.id;
-    channelRef.count = 1;
 
     return () => {
-      channelRef.count--;
-      if (channelRef.count <= 0) {
-        supabase.removeChannel(channel);
-        channelRef.channel = null;
-        channelRef.userId = null;
-        channelRef.count = 0;
+      channelState.listeners.delete(fetchRole);
+      channelState.refCount--;
+      if (channelState.refCount <= 0 && channelState.channel) {
+        supabase.removeChannel(channelState.channel);
+        channelState.channel = null;
+        channelState.userId = null;
+        channelState.refCount = 0;
+        channelState.listeners.clear();
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [user?.id, fetchRole]);
 
   return { role, roleLoading };
 };

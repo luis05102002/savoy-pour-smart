@@ -125,16 +125,19 @@ export const useWaiterCalls = () => {
           toast.info(`${label} — Mesa ${call.table_number}`, { duration: 10000 });
 
           // Push notification
-          sendLocalNotification(
-            `Mesa ${call.table_number} pide la cuenta`,
-            'Un cliente quiere pagar'
-          );
+          const notifTitle = call.type === 'payment'
+            ? `Mesa ${call.table_number} pide la cuenta`
+            : `Mesa ${call.table_number} llama al camarero`;
+          const notifBody = call.type === 'payment'
+            ? 'Un cliente quiere pagar'
+            : 'Un cliente necesita atención';
+          sendLocalNotification(notifTitle, notifBody);
         }
       )
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [session, fetchCalls, sendLocalNotification, role]);
+  }, [session, fetchCalls, sendLocalNotification]);
 
   return { calls, dismissCall, callWaiter, fetchCalls };
 };

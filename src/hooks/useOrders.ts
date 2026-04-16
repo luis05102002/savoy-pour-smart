@@ -204,10 +204,9 @@ export const useRealtimeOrders = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [addOrder, updateOrderInStore, session]);
+  }, [addOrder, updateOrderInStore, session, sendLocalNotification]);
 
-  const updateOrderStatus = async (orderId: string, status: string) => {
+  const updateOrderStatus = useCallback(async (orderId: string, status: 'pending' | 'preparing' | 'served' | 'paid') => {
     // Client-side role check for defense-in-depth (skip while loading)
     if (role !== null && role !== 'admin' && role !== 'staff') {
       toast.error('No tienes permisos para actualizar pedidos');
@@ -221,7 +220,7 @@ export const useRealtimeOrders = () => {
       if (previousStatus) updateOrderInStore(orderId, previousStatus);
       toast.error('Error al actualizar el pedido');
     }
-  };
+  }, [role, updateOrderInStore]);
 
   return { orders, updateOrderStatus, requestPermission, permission, refreshOrders: fetchOrders, newOrderAlert, dismissAlert: () => setNewOrderAlert(null) };
 };
