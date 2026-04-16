@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import type { MenuItem } from '@/data/menu';
 import { useCartStore } from '@/store/orderStore';
 import { getTagLabel } from '@/hooks/useMenuItems';
+import { getMenuImage } from '@/data/menuImages';
 import { Plus } from 'lucide-react';
 
 interface MenuCategoryProps {
@@ -32,16 +33,19 @@ const MenuCategory = ({ category, items }: MenuCategoryProps) => {
           >
             <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gold scale-y-0 group-hover:scale-y-100 transition-transform duration-200 origin-top rounded-l-lg" />
 
-            {item.image_url && (
-              <img
-                src={item.image_url}
-                alt={item.name}
-                loading="lazy"
-                width={80}
-                height={80}
-                className="w-20 h-20 rounded-lg object-cover shrink-0 group-hover:scale-[1.03] transition-transform duration-300"
-              />
-            )}
+{(() => {
+                const imgSrc = getMenuImage(item);
+                return imgSrc ? (
+                  <img
+                    src={imgSrc}
+                    alt={item.name}
+                    loading="lazy"
+                    width={80}
+                    height={80}
+                    className="w-20 h-20 rounded-lg object-cover shrink-0 group-hover:scale-[1.03] transition-transform duration-300"
+                  />
+                ) : null;
+              })()}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="font-display text-base text-foreground leading-snug">{item.name}</h3>
