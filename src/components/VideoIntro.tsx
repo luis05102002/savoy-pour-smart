@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 const VIDEOS = ['/videos/video1.mp4', '/videos/video2.mp4', '/videos/video3.mp4'];
 const DURATION_PER_VIDEO = 4000;
 const CROSSFADE_MS = 1200;
-const MAX_LOAD_WAIT = 12000; // Don't block forever on slow connections
 
 interface VideoIntroProps {
   onComplete: () => void;
@@ -14,63 +13,42 @@ const VideoIntro = ({ onComplete }: VideoIntroProps) => {
   const [currentVideo, setCurrentVideo] = useState(0);
   const [nextVideo, setNextVideo] = useState<number | null>(null);
   const [exiting, setExiting] = useState(false);
-  const [ready, setReady] = useState(false);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const startedRef = useRef(false);
 
-  // Preload all videos — start sequence once ready or after timeout
+  // Start video 1 and music immediately — don't wait for other videos
   useEffect(() => {
-    let readyCount = 0;
-    const total = VIDEOS.length;
-    let settled = false;
+    if (startedRef.current) return;
+    startedRef.current = true;
 
-    const markReady = () => {
-      if (settled) return;
-      readyCount++;
-      if (readyCount >= total) {
-        settled = true;
-        setReady(true);
-      }
-    };
+    const first = videoRefs.current[0];
+    if (first) {
+      first.play().catch(() => {});
+    }
 
-    // Also set a max-wait timeout so slow connections don't freeze
-    const fallbackTimer = setTimeout(() => {
-      settled = true;
-      setReady(true);
-    }, MAX_LOAD_WAIT);
-
-    VIDEOS.forEach((src, i) => {
-      const el = videoRefs.current[i];
-      if (!el) { markReady(); return; }
-      if (el.readyState >= 3) {
-        markReady();
-      } else {
-        el.addEventListener('canplaythrough', markReady, { once: true });
-        el.addEventListener('error', markReady, { once: true });
-      }
-    });
-
-    return () => clearTimeout(fallbackTimer);
-  }, []);
-
-  // Start music + first video once ready
-  useEffect(() => {
-    if (!ready) return;
     const audio = new Audio('/videos/intro-music.mp3');
     audio.loop = true;
     audio.volume = 0.4;
     audioRef.current = audio;
     audio.play().catch(() => {});
 
-    const first = videoRefs.current[0];
-    if (first) first.play().catch(() => {});
-
     return () => {
       audio.pause();
       audio.src = '';
     };
-  }, [ready]);
+  }, []);
+
+  // Preload next video while current one plays
+  useEffect(() => {
+    const nextIdx = currentVideo + 1;
+    if (nextIdx >= VIDEOS.length) return;
+    const nextEl = videoRefs.current[nextIdx];
+    if (nextEl && nextEl.readyState < 2) {
+      nextEl.load();
+    }
+  }, [currentVideo]);
 
   const handleComplete = useCallback(() => {
     if (exiting) return;
@@ -94,8 +72,31 @@ const VideoIntro = ({ onComplete }: VideoIntroProps) => {
   const advanceOrEnd = useCallback(() => {
     if (currentVideo < VIDEOS.length - 1) {
       const next = currentVideo + 1;
-      setNextVideo(next);
       const nextEl = videoRefs.current[next];
+
+      // If next video isn't buffered enough, wait up to 2s then skip
+      if (nextEl && nextEl.readyState < 3) {
+        const waitMs = 1500;
+        const waitTimer = setTimeout(() => {
+          if (nextEl.readyState >= 2) {
+            // Ready enough now, play it
+            nextEl.currentTime = 0;
+            nextEl.play().catch(() => {});
+            setNextVideo(next);
+            setTimeout(() => {
+              setCurrentVideo(next);
+              setNextVideo(null);
+            }, CROSSFADE_MS);
+          } else {
+            // Still not ready, skip this video
+            advanceOrEndSkipping(next);
+          }
+        }, waitMs);
+        // Store timer so we can clean up
+        return () => clearTimeout(waitTimer);
+      }
+
+      setNextVideo(next);
       if (nextEl) {
         nextEl.currentTime = 0;
         nextEl.play().catch(() => {});
@@ -109,14 +110,31 @@ const VideoIntro = ({ onComplete }: VideoIntroProps) => {
     }
   }, [currentVideo, handleComplete]);
 
-  // Advance timer — only runs when ready and not exiting
+  // Helper to skip unavailable videos
+  const advanceOrEndSkipping = useCallback((skipIdx: number) => {
+    // If the video we want to skip to is also the last, just end
+    if (skipIdx >= VIDEOS.length - 1) {
+      handleComplete();
+      return;
+    }
+    // Otherwise advance state past the skipped video
+    setCurrentVideo(skipIdx + 1);
+    setNextVideo(null);
+    const afterSkip = videoRefs.current[skipIdx + 1];
+    if (afterSkip) {
+      afterSkip.currentTime = 0;
+      afterSkip.play().catch(() => {});
+    }
+  }, [handleComplete]);
+
+  // Advance timer — doesn't need "ready" gate, plays immediately
   useEffect(() => {
-    if (!ready || exiting) return;
+    if (exiting) return;
     timerRef.current = setTimeout(advanceOrEnd, DURATION_PER_VIDEO);
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [currentVideo, ready, exiting, advanceOrEnd]);
+  }, [currentVideo, exiting, advanceOrEnd]);
 
   return (
     <motion.div
@@ -135,10 +153,10 @@ const VideoIntro = ({ onComplete }: VideoIntroProps) => {
             key={src}
             ref={(el) => { videoRefs.current[i] = el; }}
             src={src}
-            preload="auto"
+            preload={i === 0 ? 'auto' : 'metadata'}
             muted
             playsInline
-            loop
+            loop={i === currentVideo && i === VIDEOS.length - 1}
             controls={false}
             style={{
               position: 'absolute',
@@ -155,21 +173,6 @@ const VideoIntro = ({ onComplete }: VideoIntroProps) => {
         );
       })}
 
-      {/* Loading spinner while videos buffer */}
-      {!ready && (
-        <motion.div
-          className="absolute inset-0 flex flex-col items-center justify-center z-30"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <p className="font-display text-4xl gold-text-gradient tracking-[0.35em] uppercase drop-shadow-lg mb-4">
-            Savoy
-          </p>
-          <div className="mt-4 w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        </motion.div>
-      )}
-
       {/* Cinematic overlay */}
       <div
         className="absolute inset-0 z-10"
@@ -179,33 +182,31 @@ const VideoIntro = ({ onComplete }: VideoIntroProps) => {
       />
 
       {/* Progress bar */}
-      {ready && (
-        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex gap-2.5 z-20">
-          {VIDEOS.map((_, i) => (
-            <div
-              key={i}
-              className="h-1 rounded-full overflow-hidden bg-muted-foreground/20"
-              style={{ width: i === currentVideo ? 32 : 6, transition: 'width 0.5s ease' }}
-            >
-              {i === currentVideo && (
-                <motion.div
-                  className="h-full rounded-full bg-primary"
-                  initial={{ width: '0%' }}
-                  animate={{ width: '100%' }}
-                  transition={{ duration: DURATION_PER_VIDEO / 1000, ease: 'linear' }}
-                  key={`bar-${currentVideo}`}
-                />
-              )}
-              {i < currentVideo && <div className="h-full w-full bg-primary/60 rounded-full" />}
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex gap-2.5 z-20">
+        {VIDEOS.map((_, i) => (
+          <div
+            key={i}
+            className="h-1 rounded-full overflow-hidden bg-muted-foreground/20"
+            style={{ width: i === currentVideo ? 32 : 6, transition: 'width 0.5s ease' }}
+          >
+            {i === currentVideo && (
+              <motion.div
+                className="h-full rounded-full bg-primary"
+                initial={{ width: '0%' }}
+                animate={{ width: '100%' }}
+                transition={{ duration: DURATION_PER_VIDEO / 1000, ease: 'linear' }}
+                key={`bar-${currentVideo}`}
+              />
+            )}
+            {i < currentVideo && <div className="h-full w-full bg-primary/60 rounded-full" />}
+          </div>
+        ))}
+      </div>
 
       {/* Skip text */}
       <motion.p
         initial={{ opacity: 0 }}
-        animate={{ opacity: ready ? 0.6 : 0 }}
+        animate={{ opacity: 0.6 }}
         transition={{ delay: 1.5 }}
         className="absolute bottom-10 left-1/2 -translate-x-1/2 text-muted-foreground text-[10px] tracking-[0.3em] uppercase font-body z-20"
       >
@@ -216,7 +217,7 @@ const VideoIntro = ({ onComplete }: VideoIntroProps) => {
       <motion.div
         className="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none"
         initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: ready ? 0.7 : 0, y: ready ? 0 : 30 }}
+        animate={{ opacity: 0.7, y: 0 }}
         transition={{ delay: 0.4, duration: 1, ease: 'easeOut' }}
       >
         <p className="font-display text-4xl gold-text-gradient tracking-[0.35em] uppercase drop-shadow-lg">
