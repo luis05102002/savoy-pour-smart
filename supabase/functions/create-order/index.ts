@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
     }
 
     // Map by id for quick lookup
-    const menuMap = new Map(menuItems.map((m) => [m.id, m]);
+    const menuMap = new Map(menuItems.map((m) => [m.id, m]));
 
     // Validate all items exist and are available, build order items with real prices
     const orderItems = [];
