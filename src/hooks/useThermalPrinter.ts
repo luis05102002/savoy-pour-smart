@@ -45,9 +45,9 @@ export const useThermalPrinter = () => {
     share: false,
   });
   
-  const portRef = useRef<SerialPort | null>(null);
+  const portRef = useRef<any>(null);
   const writerRef = useRef<WritableStreamDefaultWriter<Uint8Array> | null>(null);
-  const bluetoothDeviceRef = useRef<BluetoothDevice | null>(null);
+  const bluetoothDeviceRef = useRef<any>(null);
 
   // Detectar capacidades del dispositivo
   useEffect(() => {
@@ -78,7 +78,7 @@ export const useThermalPrinter = () => {
       // Android con Bluetooth
       if (capabilities.bluetooth && /Android/.test(navigator.userAgent)) {
         try {
-          const device = await navigator.bluetooth.requestDevice({
+          const device = await (navigator as any).bluetooth.requestDevice({
             filters: [
               { namePrefix: 'Printer' },
               { namePrefix: 'POS' },
@@ -99,7 +99,7 @@ export const useThermalPrinter = () => {
       
       // Desktop Chrome/Edge - Web Serial API
       if (capabilities.serial) {
-        const port = await navigator.serial.requestPort({
+        const port = await (navigator as any).serial.requestPort({
           filters: [
             { usbVendorId: 0x0483 }, // STMicroelectronics
             { usbVendorId: 0x067b }, // Prolific
