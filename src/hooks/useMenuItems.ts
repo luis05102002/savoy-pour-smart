@@ -50,6 +50,11 @@ export const useMenuItems = () => {
       if (!item.price || item.price <= 0 || item.price > 9999) throw new Error('Precio inválido (0–9999€)');
       if (!item.category?.trim() || item.category.length > 50) throw new Error('Categoría inválida');
       if (item.description && item.description.length > 500) throw new Error('Descripción demasiado larga (máx. 500)');
+      // Validate image_url format if provided
+      if (item.image_url) {
+        try { new URL(item.image_url); } catch { throw new Error('URL de imagen inválida'); }
+        if (!item.image_url.startsWith('https://') && !item.image_url.startsWith('/')) throw new Error('La URL de imagen debe empezar con https:// o /');
+      }
       const { error } = await supabase.from('menu_items').insert(item);
       if (error) throw error;
     },
@@ -66,6 +71,10 @@ export const useMenuItems = () => {
       if (updates.price !== undefined && (updates.price <= 0 || updates.price > 9999)) throw new Error('Precio inválido (0–9999€)');
       if (updates.category !== undefined && (!updates.category.trim() || updates.category.length > 50)) throw new Error('Categoría inválida');
       if (updates.description !== undefined && updates.description.length > 500) throw new Error('Descripción demasiado larga (máx. 500)');
+      if (updates.image_url !== undefined && updates.image_url) {
+        try { new URL(updates.image_url); } catch { throw new Error('URL de imagen inválida'); }
+        if (!updates.image_url.startsWith('https://') && !updates.image_url.startsWith('/')) throw new Error('La URL de imagen debe empezar con https:// o /');
+      }
       const { error } = await supabase.from('menu_items').update(updates).eq('id', id);
       if (error) throw error;
     },

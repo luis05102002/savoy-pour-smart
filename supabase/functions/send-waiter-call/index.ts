@@ -9,7 +9,7 @@ const ALLOWED_ORIGINS = [
 ];
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "", // Set dynamically per request
+  "Access-Control-Allow-Origin": "",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
@@ -17,39 +17,70 @@ const corsHeaders = {
 function getAllowedOrigin(req: Request): string {
   const origin = req.headers.get("origin") || "";
   if (ALLOWED_ORIGINS.includes(origin)) return origin;
-  // Only allow lovable.app subdomains that are preview builds for this project
   if (origin.match(/^https:\/\/[a-z0-9-]+--savoy(-pour-smart|-by-pg)?\.lovable\.app$/)) return origin;
-  return ""; // Block unknown origins
+  return "";
 }
+
+// IP-based rate limiting
+const rateLimits = new Map<string, { count: number; resetAt: number }>();
+
+function checkIpRateLimit(req: Request, keyPrefix: string, maxRequests: number, windowMs: number): { allowed: boolean; retryAfter: number } {
+  const forward = req.headers.get("x-forwarded-for");
+  const ip = forward ? forward.split(",")[0].trim() : (req.headers.get("x-real-ip") || "unknown");
+  const key = `${keyPrefix}:${ip}`;
+  const now = Date.now();
+
+  const entry = rateLimits.get(key);
+  if (!entry || now > entry.resetAt) {
+    rateLimits.set(key, { count: 1, resetAt: now + windowMs });
+    return { allowed: true, retryAfter: 0 };
+  }
+
+  if (entry.count >= maxRequests) {
+    return { allowed: false, retryAfter: Math.ceil((entry.resetAt - now) / 1000) };
+  }
+
+  entry.count++;
+  return { allowed: true, retryAfter: 0 };
+}
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of rateLimits) {
+    if (now > entry.resetAt) rateLimits.delete(key);
+  }
+}, 5 * 60 * 1000);
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", {
-      headers: {
-        ...corsHeaders,
-        "Access-Control-Allow-Origin": getAllowedOrigin(req),
-      },
+      headers: { ...corsHeaders, "Access-Control-Allow-Origin": getAllowedOrigin(req) },
     });
   }
 
   const origin = getAllowedOrigin(req);
+  const responseHeaders = { ...corsHeaders, "Access-Control-Allow-Origin": origin };
 
   try {
+    // IP rate limit: max 20 waiter calls per IP per hour
+    const ipRateCheck = checkIpRateLimit(req, "waiter", 20, 60 * 60 * 1000);
+    if (!ipRateCheck.allowed) {
+      return new Response(
+        JSON.stringify({ error: `Demasiadas llamadas. Intenta de nuevo en ${ipRateCheck.retryAfter}s.` }),
+        { status: 429, headers: { ...responseHeaders, "Content-Type": "application/json", "Retry-After": String(ipRateCheck.retryAfter) } }
+      );
+    }
+
     const { tableNumber, type } = (await req.json()) as {
       tableNumber: number;
       type?: string;
     };
 
     // Validate table number
-    if (
-      !tableNumber ||
-      typeof tableNumber !== "number" ||
-      tableNumber < 1 ||
-      tableNumber > 100
-    ) {
+    if (!tableNumber || typeof tableNumber !== "number" || tableNumber < 1 || tableNumber > 100) {
       return new Response(
         JSON.stringify({ error: "Número de mesa inválido" }),
-        { status: 400, headers: { ...corsHeaders, "Access-Control-Allow-Origin": origin, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...responseHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -59,7 +90,7 @@ Deno.serve(async (req) => {
     if (!callType) {
       return new Response(
         JSON.stringify({ error: "Tipo de llamada inválido" }),
-        { status: 400, headers: { ...corsHeaders, "Access-Control-Allow-Origin": origin, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...responseHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -80,18 +111,17 @@ Deno.serve(async (req) => {
     if (queryError) {
       return new Response(
         JSON.stringify({ error: "Error al verificar llamadas previas" }),
-        { status: 500, headers: { ...corsHeaders, "Access-Control-Allow-Origin": origin, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...responseHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // If there's a pending call within the last 5 minutes, reject
     if (recentCalls && recentCalls.length > 0) {
       return new Response(
         JSON.stringify({
           error: "Ya hay una llamada pendiente para esta mesa. Un camarero la atenderá pronto.",
           existingCall: true,
         }),
-        { status: 429, headers: { ...corsHeaders, "Access-Control-Allow-Origin": origin, "Content-Type": "application/json" } }
+        { status: 429, headers: { ...responseHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -108,18 +138,18 @@ Deno.serve(async (req) => {
     if (insertError) {
       return new Response(
         JSON.stringify({ error: "Error al crear la llamada" }),
-        { status: 500, headers: { ...corsHeaders, "Access-Control-Allow-Origin": origin, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...responseHeaders, "Content-Type": "application/json" } }
       );
     }
 
     return new Response(
       JSON.stringify({ id: call.id, createdAt: call.created_at }),
-      { status: 200, headers: { ...corsHeaders, "Access-Control-Allow-Origin": origin, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...responseHeaders, "Content-Type": "application/json" } }
     );
   } catch {
     return new Response(
       JSON.stringify({ error: "Error interno del servidor" }),
-      { status: 500, headers: { ...corsHeaders, "Access-Control-Allow-Origin": origin, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...responseHeaders, "Content-Type": "application/json" } }
     );
   }
 });

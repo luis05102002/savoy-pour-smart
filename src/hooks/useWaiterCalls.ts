@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useUserRole } from './useUserRole';
 import { usePushNotifications } from './usePushNotifications';
 import { toast } from 'sonner';
 
@@ -52,6 +53,7 @@ const playCallSound = async () => {
 export const useWaiterCalls = () => {
   const [calls, setCalls] = useState<WaiterCall[]>([]);
   const { session } = useAuth();
+  const { role } = useUserRole();
   const { sendLocalNotification } = usePushNotifications();
   const processedIds = useRef(new Set<string>());
 
@@ -69,8 +71,11 @@ export const useWaiterCalls = () => {
   }, [session]);
 
   const dismissCall = useCallback(async (id: string) => {
-    // RLS policies enforce admin/staff role on the backend
-    // ProtectedRoute with requireAdmin already gates the Dashboard
+    // Client-side role check for defense-in-depth
+    if (role !== 'admin' && role !== 'staff') {
+      toast.error('No tienes permisos para atender llamadas');
+      return;
+    }
     await supabase.from('waiter_calls').update({ status: 'attended' }).eq('id', id);
     setCalls(prev => prev.filter(c => c.id !== id));
   }, []);
@@ -129,7 +134,7 @@ export const useWaiterCalls = () => {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [session, fetchCalls, sendLocalNotification]);
+  }, [session, fetchCalls, sendLocalNotification, role]);
 
   return { calls, dismissCall, callWaiter, fetchCalls };
 };

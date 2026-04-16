@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrdersStore } from '@/store/orderStore';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import type { OrderItem } from '@/data/menu';
 import { toast } from 'sonner';
 
@@ -100,6 +101,7 @@ export const useRealtimeOrders = () => {
   const { orders, setOrders, addOrder, updateOrderInStore } = useOrdersStore();
   const { sendLocalNotification, requestPermission, permission } = usePushNotifications();
   const { session } = useAuth();
+  const { role } = useUserRole();
   const initialLoadDone = useRef(false);
   const [newOrderAlert, setNewOrderAlert] = useState<{ tableNumber: number; total: number; itemCount: number } | null>(null);
 
@@ -206,8 +208,12 @@ export const useRealtimeOrders = () => {
   }, [addOrder, updateOrderInStore, session]);
 
   const updateOrderStatus = async (orderId: string, status: string) => {
+    // Client-side role check for defense-in-depth
+    if (role !== 'admin' && role !== 'staff') {
+      toast.error('No tienes permisos para actualizar pedidos');
+      return;
+    }
     // RLS policies enforce admin/staff role on the backend
-    // ProtectedRoute with requireAdmin already gates the Dashboard
     const previousStatus = useOrdersStore.getState().orders.find(o => o.id === orderId)?.status;
     updateOrderInStore(orderId, status as 'pending' | 'preparing' | 'served' | 'paid');
     const { error } = await supabase.from('orders').update({ status }).eq('id', orderId);
