@@ -203,15 +203,17 @@ const VideoIntro = ({ onComplete }: VideoIntroProps) => {
         ))}
       </div>
 
-      {/* Skip text */}
-      <motion.p
+      {/* Skip button — more visible */}
+      <motion.button
         initial={{ opacity: 0 }}
-        animate={{ opacity: 0.6 }}
-        transition={{ delay: 1.5 }}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 text-muted-foreground text-[10px] tracking-[0.3em] uppercase font-body z-20"
+        animate={{ opacity: 1 }}
+        transition={{ delay: 2 }}
+        onClick={handleComplete}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 px-6 py-2.5 rounded-full border border-white/30 text-white/70 text-xs tracking-[0.2em] uppercase font-body backdrop-blur-sm hover:bg-white/10 hover:text-white hover:border-white/50 transition-all"
+        aria-label="Saltar intro"
       >
-        Toca para entrar
-      </motion.p>
+        Saltar
+      </motion.button>
 
       {/* Brand overlay — subtle during videos */}
       <motion.div

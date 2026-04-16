@@ -219,6 +219,53 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Send confirmation email if email provided
+    if (body.customer_email?.trim()) {
+      try {
+        const zoneLabels: Record<string, string> = { barra: "Barra", terraza: "Terraza", salon: "Salón", privado: "Privado" };
+        const zoneText = body.preferred_zone ? zoneLabels[body.preferred_zone] || body.preferred_zone : "";
+        const dateFormatted = new Date(`${body.reservation_date}T12:00`).toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
+        const html = `
+          <div style="font-family: 'Georgia', serif; max-width: 480px; margin: 0 auto; background: #0D0D0D; color: #E5E5E5; border: 1px solid #6B9E9E; border-radius: 12px; overflow: hidden;">
+            <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 32px 24px; text-align: center; border-bottom: 2px solid #6B9E9E;">
+              <h1 style="margin: 0; font-size: 28px; letter-spacing: 0.3em; text-transform: uppercase; color: #6B9E9E;">Savoy</h1>
+              <p style="margin: 4px 0 0; font-size: 12px; letter-spacing: 0.5em; color: #888;">by PG</p>
+            </div>
+            <div style="padding: 28px 24px;">
+              <p style="font-size: 16px; margin: 0 0 4px;">¡Reserva confirmada!</p>
+              <p style="font-size: 13px; color: #999; margin: 0 0 24px;">Hemos recibido tu solicitud. Te confirmaremos por teléfono pronto.</p>
+              <div style="background: #1a1a2e; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                <table style="width: 100%; font-size: 14px; border-collapse: collapse;">
+                  <tr><td style="color: #6B9E9E; padding: 6px 0; width: 100px;">Fecha</td><td style="padding: 6px 0;">${dateFormatted}</td></tr>
+                  <tr><td style="color: #6B9E9E; padding: 6px 0;">Hora</td><td style="padding: 6px 0;">${body.reservation_time}h</td></tr>
+                  <tr><td style="color: #6B9E9E; padding: 6px 0;">Personas</td><td style="padding: 6px 0;">${body.party_size}</td></tr>
+                  ${zoneText ? `<tr><td style="color: #6B9E9E; padding: 6px 0;">Zona</td><td style="padding: 6px 0;">${zoneText}</td></tr>` : ""}
+                </table>
+              </div>
+              ${body.customer_notes ? `<p style="font-size: 13px; color: #999; margin: 0 0 16px;">Nota: ${sanitize(body.customer_notes)}</p>` : ""}
+              <p style="font-size: 12px; color: #666; text-align: center; margin: 24px 0 0;">Savoy by PG · Sanlúcar de Barrameda</p>
+            </div>
+          </div>
+        `;
+
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${Deno.env.get("RESEND_API_KEY") || ""}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: "Savoy by PG <no-reply@savoy-pour-smart.lovable.app>",
+            to: [body.customer_email.trim()],
+            subject: `Reserva confirmada — ${dateFormatted} a las ${body.reservation_time}h`,
+            html,
+          }),
+        });
+      } catch {
+        // Email is non-critical — don't fail the reservation
+      }
+    }
+
     return new Response(
       JSON.stringify({ id: reservation.id, createdAt: reservation.created_at }),
       { status: 200, headers: { ...responseHeaders, "Content-Type": "application/json" } }

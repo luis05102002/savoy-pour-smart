@@ -10,13 +10,13 @@ const Index = () => {
   const tapCount = useRef(0);
   const tapTimer = useRef<ReturnType<typeof setTimeout>>();
   const [showIntro, setShowIntro] = useState(() => {
-    // Only show intro once per session
-    if (sessionStorage.getItem('savoy-intro-seen')) return false;
+    // Only show intro once per device, skip on revisit
+    if (localStorage.getItem('savoy-intro-seen')) return false;
     return true;
   });
 
   const handleIntroComplete = useCallback(() => {
-    sessionStorage.setItem('savoy-intro-seen', '1');
+    localStorage.setItem('savoy-intro-seen', '1');
     setShowIntro(false);
   }, []);
 
