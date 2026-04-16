@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Printer, X } from 'lucide-react';
+import { Printer, X, Share2, MessageCircle } from 'lucide-react';
 import type { Order } from '@/data/menu';
 import { IVA_DIVISOR, IVA_RATE } from '@/lib/constants';
 
@@ -76,6 +76,55 @@ const InvoiceModal = ({ order, onClose }: InvoiceModalProps) => {
       printWindow.print();
       printWindow.close();
     }, 250);
+  };
+
+  const formatWhatsAppText = (order: Order): string => {
+    const lines = [
+      '🍹 *Savoy by PG*',
+      'Cocktail Bar & Lounge',
+      '',
+      `📋 *Factura* SAV-${order.id}`,
+      `📅 ${order.createdAt.toLocaleDateString('es-ES')}`,
+      `🪑 Mesa ${order.tableNumber}`,
+      '',
+      '──────────',
+      ...order.items.map(item => `${item.quantity}× ${item.menuItem.name} _${(item.menuItem.price * item.quantity).toFixed(2)}€_`),
+      '──────────',
+      '',
+      `Subtotal: ${(order.total / IVA_DIVISOR).toFixed(2)}€`,
+      `IVA ${(IVA_RATE * 100).toFixed(0)}%: ${(order.total - order.total / IVA_DIVISOR).toFixed(2)}€`,
+      `*Total: ${order.total.toFixed(2)}€*`,
+      '',
+      '¡Gracias por su visita! 🥂',
+      '📱 @savoy_pg',
+    ];
+    return lines.join('\n');
+  };
+
+  const handleShare = async () => {
+    const text = formatWhatsAppText(order);
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Factura Savoy - Mesa ${order.tableNumber}`,
+          text,
+        });
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          await navigator.clipboard.writeText(text);
+          alert('Factura copiada al portapapeles');
+        }
+      }
+    } else {
+      await navigator.clipboard.writeText(text);
+      alert('Factura copiada al portapapeles');
+    }
+  };
+
+  const handleWhatsApp = () => {
+    const text = formatWhatsAppText(order);
+    const encoded = encodeURIComponent(text);
+    window.open(`https://wa.me/?text=${encoded}`, '_blank');
   };
 
   return (
@@ -159,17 +208,31 @@ const InvoiceModal = ({ order, onClose }: InvoiceModalProps) => {
           </div>
 
           {/* Action buttons */}
-          <div className="p-6 pt-0 flex gap-3">
+          <div className="p-6 pt-0 flex gap-2">
             <button
               onClick={handlePrint}
               className="flex-1 py-3 rounded-lg gold-gradient text-primary-foreground font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
             >
               <Printer size={18} />
-              Imprimir
+              <span className="hidden sm:inline">Imprimir</span>
+            </button>
+            <button
+              onClick={handleWhatsApp}
+              className="py-3 px-3 rounded-lg border border-green-600/40 text-green-500 hover:bg-green-500/10 transition-colors flex items-center justify-center"
+              title="Enviar por WhatsApp"
+            >
+              <MessageCircle size={18} />
+            </button>
+            <button
+              onClick={handleShare}
+              className="py-3 px-3 rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center"
+              title="Compartir"
+            >
+              <Share2 size={18} />
             </button>
             <button
               onClick={onClose}
-              className="py-3 px-6 rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
+              className="py-3 px-4 rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors text-sm"
             >
               Cerrar
             </button>
