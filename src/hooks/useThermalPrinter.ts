@@ -239,12 +239,18 @@ export const useThermalPrinter = () => {
 
   // Imprimir por AirPrint (iOS/macOS)
   const printViaAirPrint = useCallback(async (text: string) => {
-    // Crear ventana de impresión nativa
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       throw new Error('No se pudo abrir ventana de impresión');
     }
     
+    const safeText = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -268,7 +274,7 @@ export const useThermalPrinter = () => {
         </style>
       </head>
       <body>
-        <pre>${text}</pre>
+        <pre>${safeText}</pre>
         <script>
           window.onload = function() {
             setTimeout(function() {
@@ -276,7 +282,7 @@ export const useThermalPrinter = () => {
               setTimeout(function() { window.close(); }, 1000);
             }, 200);
           };
-        </script>
+        <\/script>
       </body>
       </html>
     `);

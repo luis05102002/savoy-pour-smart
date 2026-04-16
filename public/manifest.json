@@ -1,12 +1,14 @@
 {
-  "name": "Savoy by PG",
+  "name": "Savoy by PG — Cocktail Bar & Lounge",
   "short_name": "Savoy",
-  "description": "Savoy by PG — Cocktail Bar & Lounge",
+  "description": "Cócteles de autor en Sanlúcar de Barrameda. Carta digital, reservas y pedidos desde tu mesa.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#6B9E9E",
+  "background_color": "#0D0D0D",
   "theme_color": "#6B9E9E",
   "orientation": "portrait",
+  "categories": ["food", "lifestyle"],
+  "lang": "es",
   "icons": [
     {
       "src": "/icon-192.png",

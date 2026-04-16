@@ -12,9 +12,10 @@ dist
 dist-ssr
 *.local
 
-# Environment variables - NOT recommended to commit, but needed for Lovable
-# .env
-# .env.*
+# Environment variables
+.env
+.env.*
+.env.local
 
 # Editor directories and files
 .vscode/*
