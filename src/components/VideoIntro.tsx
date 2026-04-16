@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 const VIDEOS = ['/videos/video1.mp4', '/videos/video2.mp4', '/videos/video3.mp4'];
-const DURATION_PER_VIDEO = 4000;
-const CROSSFADE_MS = 1200;
+const DURATION_PER_VIDEO = 2500;
+const CROSSFADE_MS = 600;
 
 interface VideoIntroProps {
   onComplete: () => void;
