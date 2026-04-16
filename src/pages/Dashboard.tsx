@@ -75,9 +75,9 @@ const Dashboard = () => {
       <header className="border-b border-border bg-card sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
-            <BackButton to="/" label="" className="hidden sm:flex" />
-            <button onClick={() => navigate('/')} className="sm:hidden p-1 text-muted-foreground hover:text-foreground">
-              <BackButton to="/" />
+            <BackButton to="/" label="" className="hidden sm:inline-flex" />
+            <button onClick={() => navigate('/')} className="sm:hidden p-1 text-muted-foreground hover:text-foreground" aria-label="Volver al inicio">
+              <ArrowLeft size={20} />
             </button>
             <div>
               <h1 className="font-display text-lg sm:text-xl gold-text-gradient tracking-[0.15em] uppercase">
