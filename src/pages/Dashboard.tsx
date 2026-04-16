@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, ChefHat, Check, Receipt, FileText, QrCode, LogOut, BarChart3, Wine, ClipboardList, History, Bell, BellOff, RefreshCw, CalendarDays, HandCoins, Printer, Menu, X } from 'lucide-react';
+import { Clock, ChefHat, Check, Receipt, FileText, QrCode, LogOut, BarChart3, Wine, ClipboardList, History, Bell, BellOff, RefreshCw, CalendarDays, HandCoins, Printer, Menu, X, ArrowLeft } from 'lucide-react';
 import { useRealtimeOrders } from '@/hooks/useOrders';
 import { useThermalPrinter } from '@/hooks/useThermalPrinter';
 import type { Order } from '@/data/menu';
