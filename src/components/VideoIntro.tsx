@@ -9,24 +9,40 @@ interface VideoIntroProps {
 
 const VideoIntro = ({ onComplete }: VideoIntroProps) => {
   const [currentVideo, setCurrentVideo] = useState(0);
-  const [fading, setFading] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [nextVideo, setNextVideo] = useState<number | null>(null);
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Force autoplay without controls
+  const handleVideoRef = useCallback((el: HTMLVideoElement | null, idx: number) => {
+    videoRefs.current[idx] = el;
+    if (el) {
+      el.removeAttribute('controls');
+      el.play().catch(() => {});
+    }
+  }, []);
 
   const advanceOrEnd = useCallback(() => {
     if (currentVideo < videos.length - 1) {
-      setFading(true);
+      const next = currentVideo + 1;
+      setNextVideo(next);
+      // Start next video playing before transition
+      const nextEl = videoRefs.current[next];
+      if (nextEl) {
+        nextEl.currentTime = 0;
+        nextEl.play().catch(() => {});
+      }
+      // After crossfade, make next the current
       setTimeout(() => {
-        setCurrentVideo((prev) => prev + 1);
-        setFading(false);
-      }, 600);
+        setCurrentVideo(next);
+        setNextVideo(null);
+      }, 1000);
     } else {
       onComplete();
     }
   }, [currentVideo, onComplete]);
 
   useEffect(() => {
-    // Auto-advance after 4s per video
     timerRef.current = setTimeout(advanceOrEnd, 4000);
     return () => clearTimeout(timerRef.current);
   }, [currentVideo, advanceOrEnd]);
@@ -39,29 +55,30 @@ const VideoIntro = ({ onComplete }: VideoIntroProps) => {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.8 }}
     >
-      {/* Video background */}
-      <AnimatePresence mode="wait">
-        <motion.video
-          key={currentVideo}
-          ref={videoRef}
-          src={videos[currentVideo]}
+      {/* All videos stacked, crossfade via opacity */}
+      {videos.map((src, i) => (
+        <video
+          key={i}
+          ref={(el) => handleVideoRef(el, i)}
+          src={src}
           autoPlay
           muted
           playsInline
           loop
-          className="absolute inset-0 w-full h-full object-cover"
-          initial={{ opacity: 0, scale: 1.1 }}
-          animate={{ opacity: fading ? 0 : 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.8, ease: 'easeInOut' }}
+          controls={false}
+          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out"
+          style={{
+            opacity: i === currentVideo ? 1 : i === nextVideo ? 1 : 0,
+            zIndex: i === nextVideo ? 2 : i === currentVideo ? 1 : 0,
+          }}
         />
-      </AnimatePresence>
+      ))}
 
-      {/* Dark overlay with gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/30 to-background/80" />
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/30 to-background/80 z-10" />
 
       {/* Progress dots */}
-      <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+      <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex gap-2 z-20">
         {videos.map((_, i) => (
           <div
             key={i}
@@ -76,20 +93,20 @@ const VideoIntro = ({ onComplete }: VideoIntroProps) => {
         ))}
       </div>
 
-      {/* Skip button */}
+      {/* Skip */}
       <motion.button
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1 }}
         onClick={onComplete}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 text-muted-foreground/60 text-xs tracking-widest uppercase font-body hover:text-foreground transition-colors z-10"
+        className="absolute bottom-10 left-1/2 -translate-x-1/2 text-muted-foreground/60 text-xs tracking-widest uppercase font-body hover:text-foreground transition-colors z-20"
       >
         Toca para entrar
       </motion.button>
 
       {/* Brand overlay */}
       <motion.div
-        className="absolute inset-0 flex flex-col items-center justify-center z-10"
+        className="absolute inset-0 flex flex-col items-center justify-center z-20"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.8 }}
