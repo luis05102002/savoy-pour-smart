@@ -6,6 +6,7 @@ export interface MenuItem {
   category: string;
   image?: string;
   image_url?: string | null;
+  tags?: string[];
 }
 
 export interface OrderItem {

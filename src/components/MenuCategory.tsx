@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import type { MenuItem } from '@/data/menu';
 import { useCartStore } from '@/store/orderStore';
+import { getTagLabel } from '@/hooks/useMenuItems';
 import { Plus } from 'lucide-react';
 
 interface MenuCategoryProps {
@@ -29,7 +30,6 @@ const MenuCategory = ({ category, items }: MenuCategoryProps) => {
             transition={{ delay: i * 0.05 }}
             className="flex items-start gap-3 p-3 rounded-lg bg-card border border-border/50 hover:border-gold/40 hover:bg-card/80 transition-all duration-200 group relative overflow-hidden"
           >
-            {/* Left accent line on hover */}
             <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gold scale-y-0 group-hover:scale-y-100 transition-transform duration-200 origin-top rounded-l-lg" />
 
             {item.image_url && (
@@ -43,7 +43,21 @@ const MenuCategory = ({ category, items }: MenuCategoryProps) => {
               />
             )}
             <div className="flex-1 min-w-0">
-              <h3 className="font-display text-base text-foreground leading-snug">{item.name}</h3>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-display text-base text-foreground leading-snug">{item.name}</h3>
+                {item.tags && item.tags.length > 0 && (
+                  <div className="flex gap-1 flex-wrap">
+                    {item.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-[10px] px-1.5 py-0.5 rounded-full bg-gold/10 text-gold border border-gold/20 whitespace-nowrap"
+                      >
+                        {getTagLabel(tag)}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">
                 {item.description}
               </p>

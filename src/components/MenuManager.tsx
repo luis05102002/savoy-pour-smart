@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Pencil, Trash2, X, Save, Eye, EyeOff } from 'lucide-react';
-import { useMenuItems, type DbMenuItem } from '@/hooks/useMenuItems';
+import { useMenuItems, type DbMenuItem, tagOptions, getTagLabel } from '@/hooks/useMenuItems';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +28,7 @@ const emptyForm = {
   category: defaultCategories[0],
   image_url: null as string | null,
   available: true,
+  tags: [] as string[],
 };
 
 const MenuManager = () => {
@@ -61,6 +62,7 @@ const MenuManager = () => {
       category: item.category,
       image_url: item.image_url,
       available: item.available,
+      tags: item.tags || [],
     });
     setEditing(item.id);
     setShowForm(true);
@@ -146,6 +148,26 @@ const MenuManager = () => {
                   <span className="text-sm text-foreground">Disponible</span>
                 </label>
               </div>
+              {/* Tags selector */}
+              <div className="flex flex-wrap gap-1.5">
+                {tagOptions.map(tag => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setForm(f => ({
+                      ...f,
+                      tags: f.tags.includes(tag) ? f.tags.filter(t => t !== tag) : [...f.tags, tag],
+                    }))}
+                    className={`text-[10px] px-2 py-1 rounded-full border transition-colors ${
+                      form.tags.includes(tag)
+                        ? 'bg-gold/20 border-gold/40 text-gold'
+                        : 'border-border text-muted-foreground hover:border-gold/30 hover:text-gold'
+                    }`}
+                  >
+                    {getTagLabel(tag)}
+                  </button>
+                ))}
+              </div>
               <textarea
                 placeholder="Descripción"
                 value={form.description}
@@ -176,6 +198,15 @@ const MenuManager = () => {
                 </span>
                 {!item.available && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/20 text-destructive">Oculto</span>
+                )}
+                {item.tags && item.tags.length > 0 && (
+                  <div className="flex gap-1">
+                    {item.tags.map(tag => (
+                      <span key={tag} className="text-[9px] px-1 py-0.5 rounded-full bg-gold/10 text-gold border border-gold/20">
+                        {getTagLabel(tag)}
+                      </span>
+                    ))}
+                  </div>
                 )}
               </div>
               <p className="text-xs text-muted-foreground truncate">{item.description}</p>

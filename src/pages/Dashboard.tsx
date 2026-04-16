@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, ChefHat, Check, Receipt, FileText, QrCode, LogOut, BarChart3, Wine, ClipboardList, History, Bell, BellOff, RefreshCw, CalendarDays, HandCoins, Printer } from 'lucide-react';
+import { Clock, ChefHat, Check, Receipt, FileText, QrCode, LogOut, BarChart3, Wine, ClipboardList, History, Bell, BellOff, RefreshCw, CalendarDays, HandCoins, Printer, Menu, X } from 'lucide-react';
 import { useRealtimeOrders } from '@/hooks/useOrders';
 import { useThermalPrinter } from '@/hooks/useThermalPrinter';
 import type { Order } from '@/data/menu';
@@ -38,6 +38,7 @@ const Dashboard = () => {
   const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('orders');
   const [printingTable, setPrintingTable] = useState<number | null>(null);
+  const [showActions, setShowActions] = useState(false);
 
   const filtered = filter === 'all' ? orders : orders.filter((o) => o.status === filter);
 
@@ -69,80 +70,122 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <NewOrderAlert order={newOrderAlert} onDismiss={dismissAlert} />
-      <header className="border-b border-border bg-card">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <BackButton to="/" label="Inicio" />
+
+      {/* Header */}
+      <header className="border-b border-border bg-card sticky top-0 z-30">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <BackButton to="/" label="" className="hidden sm:flex" />
+            <button onClick={() => navigate('/')} className="sm:hidden p-1 text-muted-foreground hover:text-foreground">
+              <BackButton to="/" />
+            </button>
             <div>
-              <h1 className="font-display text-xl gold-text-gradient tracking-[0.15em] uppercase">
+              <h1 className="font-display text-lg sm:text-xl gold-text-gradient tracking-[0.15em] uppercase">
                 Savoy
               </h1>
-              <p className="text-muted-foreground text-xs tracking-wider">Panel de Gestión</p>
+              <p className="text-muted-foreground text-[10px] sm:text-xs tracking-wider">Panel de Gestión</p>
             </div>
           </div>
-          <div className="flex items-center gap-1.5">
+
+          {/* Desktop action buttons */}
+          <div className="hidden md:flex items-center gap-1.5">
             <button
               onClick={connect}
               disabled={isConnecting || isConnected}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs transition-colors ${
-                isConnected
-                  ? 'border-success/40 text-success'
-                  : 'border-gold/40 text-gold hover:bg-gold/10'
+                isConnected ? 'border-success/40 text-success' : 'border-gold/40 text-gold hover:bg-gold/10'
               } disabled:opacity-50`}
               title={isConnected ? 'Impresora conectada' : 'Conectar impresora térmica'}
             >
               <Printer size={14} />
               {isConnected ? 'Conectada' : 'Conectar'}
             </button>
-            <button
-              onClick={() => { refreshOrders(); }}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-muted-foreground text-xs hover:text-foreground hover:border-gold/40 transition-colors"
-              title="Actualizar pedidos"
-            >
+            <button onClick={() => { refreshOrders(); }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-muted-foreground text-xs hover:text-foreground hover:border-gold/40 transition-colors" title="Actualizar pedidos">
               <RefreshCw size={14} />
             </button>
             <button
               onClick={requestPermission}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs transition-colors ${
-                permission === 'granted'
-                  ? 'border-success/40 text-success'
-                  : 'border-gold/40 text-gold hover:bg-gold/10'
+                permission === 'granted' ? 'border-success/40 text-success' : 'border-gold/40 text-gold hover:bg-gold/10'
               }`}
               title={permission === 'granted' ? 'Notificaciones activadas' : 'Activar notificaciones push'}
             >
               {permission === 'granted' ? <Bell size={14} /> : <BellOff size={14} />}
             </button>
-            <button
-              onClick={() => navigate('/qr')}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gold/40 text-gold text-xs hover:bg-gold/10 transition-colors"
-            >
+            <button onClick={() => navigate('/qr')} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gold/40 text-gold text-xs hover:bg-gold/10 transition-colors">
               <QrCode size={14} />
             </button>
-            <button
-              onClick={async () => { await signOut(); navigate('/login'); }}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-destructive/40 text-destructive text-xs hover:bg-destructive/10 transition-colors"
-            >
+            <button onClick={async () => { await signOut(); navigate('/login'); }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-destructive/40 text-destructive text-xs hover:bg-destructive/10 transition-colors">
               <LogOut size={14} />
             </button>
           </div>
+
+          {/* Mobile: just essential icons + menu toggle */}
+          <div className="flex md:hidden items-center gap-1">
+            <button onClick={() => { refreshOrders(); }} className="p-2 rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
+              <RefreshCw size={16} />
+            </button>
+            <button
+              onClick={requestPermission}
+              className={`p-2 rounded-lg border text-xs transition-colors ${
+                permission === 'granted' ? 'border-success/40 text-success' : 'border-gold/40 text-gold'
+              }`}
+            >
+              {permission === 'granted' ? <Bell size={16} /> : <BellOff size={16} />}
+            </button>
+            <button onClick={() => setShowActions(!showActions)} className="p-2 rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
+              {showActions ? <X size={16} /> : <Menu size={16} />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile action menu */}
+        <AnimatePresence>
+          {showActions && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="md:hidden border-t border-border overflow-hidden"
+            >
+              <div className="px-4 py-3 space-y-2">
+                <button
+                  onClick={() => { connect(); setShowActions(false); }}
+                  disabled={isConnecting || isConnected}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg border text-sm transition-colors ${
+                    isConnected ? 'border-success/40 text-success' : 'border-gold/40 text-gold'
+                  } disabled:opacity-50`}
+                >
+                  <Printer size={16} /> {isConnected ? 'Impresora conectada' : 'Conectar impresora'}
+                </button>
+                <button onClick={() => { navigate('/qr'); setShowActions(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border border-gold/40 text-gold text-sm hover:bg-gold/10 transition-colors">
+                  <QrCode size={16} /> Generar QRs
+                </button>
+                <button onClick={async () => { await signOut(); navigate('/login'); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border border-destructive/40 text-destructive text-sm hover:bg-destructive/10 transition-colors">
+                  <LogOut size={16} /> Cerrar sesión
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 py-4">
-        {/* Tabs - scrollable on mobile */}
-        <div className="flex gap-1 mb-4 bg-secondary/50 rounded-xl p-1 overflow-x-auto no-scrollbar">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
+        {/* Tabs */}
+        <div className="flex gap-1 mb-3 sm:mb-4 bg-secondary/50 rounded-xl p-1 overflow-x-auto no-scrollbar">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs whitespace-nowrap transition-all ${
+              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg text-xs whitespace-nowrap transition-all flex-1 min-w-0 justify-center ${
                 activeTab === tab.id
                   ? 'bg-gold text-primary-foreground font-medium'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <tab.icon size={14} />
-              {tab.label}
+              <tab.icon size={13} className="sm:hidden" />
+              <tab.icon size={14} className="hidden sm:inline" />
+              <span className="hidden sm:inline">{tab.label}</span>
             </button>
           ))}
         </div>
@@ -151,7 +194,7 @@ const Dashboard = () => {
           <>
             <DashboardStats orders={orders} />
 
-            <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar">
+            <div className="flex gap-1.5 sm:gap-2 mb-3 sm:mb-4 overflow-x-auto no-scrollbar">
               {(['all', ...statusFlow] as const).map((s) => {
                 const label = s === 'all' ? 'Todos' : statusConfig[s].label;
                 const count = s === 'all' ? orders.length : orders.filter((o) => o.status === s).length;
@@ -159,7 +202,7 @@ const Dashboard = () => {
                   <button
                     key={s}
                     onClick={() => setFilter(s)}
-                    className={`shrink-0 px-3 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1.5 ${
+                    className={`shrink-0 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1 sm:gap-1.5 ${
                       filter === s
                         ? 'bg-gold text-primary-foreground'
                         : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
@@ -177,7 +220,7 @@ const Dashboard = () => {
             </div>
 
             {calls.length > 0 && (
-              <div className="mb-4 space-y-2">
+              <div className="mb-3 sm:mb-4 space-y-2">
                 {calls.map(call => (
                   <motion.div
                     key={call.id}
@@ -202,13 +245,13 @@ const Dashboard = () => {
             )}
 
             {filtered.length === 0 ? (
-              <div className="text-center py-20 text-muted-foreground">
+              <div className="text-center py-16 sm:py-20 text-muted-foreground">
                 <Clock size={48} className="mx-auto mb-4 opacity-30" />
                 <p className="font-display text-lg">Sin pedidos</p>
                 <p className="text-sm mt-1">Los pedidos aparecerán aquí en tiempo real</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 <AnimatePresence>
                   {groupedByTable.map(([tableNum, tableOrders]) => {
                     const tableTotal = tableOrders.reduce((s, o) => s + o.total, 0);
@@ -244,11 +287,11 @@ const Dashboard = () => {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className={`bg-card border rounded-xl p-4 flex flex-col ${hasCall ? 'border-gold ring-2 ring-gold/30' : 'border-border'}`}
+                        className={`bg-card border rounded-xl p-3 sm:p-4 flex flex-col ${hasCall ? 'border-gold ring-2 ring-gold/30' : 'border-border'}`}
                       >
-                        <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center justify-between mb-2 sm:mb-3">
                           <div className="flex items-center gap-2">
-                            <span className="font-display text-xl text-gold">Mesa {tableNum}</span>
+                            <span className="font-display text-lg sm:text-xl text-gold">Mesa {tableNum}</span>
                             {hasCall && (
                               <span className="px-2 py-0.5 rounded-full bg-gold/20 text-gold text-xs font-medium animate-pulse">
                                 💰
@@ -256,36 +299,37 @@ const Dashboard = () => {
                             )}
                           </div>
                           <span className={`flex items-center gap-1 text-xs ${color}`}>
-                            <Icon size={14} />
-                            {label}
+                            <Icon size={13} />
+                            <span className="hidden sm:inline">{label}</span>
                           </span>
                         </div>
 
-                        <div className="text-xs text-muted-foreground mb-2">{tableOrders.length} pedido(s)</div>
+                        <div className="text-xs text-muted-foreground mb-1.5 sm:mb-2">{tableOrders.length} pedido(s)</div>
 
-                        <div className="flex-1 space-y-1.5 mb-3">
+                        <div className="flex-1 space-y-1 sm:space-y-1.5 mb-2 sm:mb-3">
                           {Array.from(consolidated.values()).map((item) => (
                             <div key={item.name} className="flex justify-between text-sm">
-                              <span className="text-foreground">
+                              <span className="text-foreground truncate mr-2">
                                 {item.quantity}× {item.name}
                               </span>
-                              <span className="text-muted-foreground">
+                              <span className="text-muted-foreground whitespace-nowrap">
                                 {(item.price * item.quantity).toFixed(2)}€
                               </span>
                             </div>
                           ))}
                         </div>
 
-                        <div className="art-deco-line my-2" />
+                        <div className="art-deco-line my-1.5 sm:my-2" />
 
-                        <div className="flex justify-between items-center mb-3">
+                        <div className="flex justify-between items-center mb-2 sm:mb-3">
                           <span className="text-xs text-muted-foreground">
                             {tableOrders[tableOrders.length - 1].createdAt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                           </span>
-                          <span className="font-display text-lg text-gold">{tableTotal.toFixed(2)}€</span>
+                          <span className="font-display text-base sm:text-lg text-gold">{tableTotal.toFixed(2)}€</span>
                         </div>
 
-                        <div className="flex gap-2">
+                        {/* Action buttons — responsive layout */}
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
                           {tableOrders.some(o => nextStatus(o.status)) && (
                             <button
                               onClick={async () => {
@@ -294,7 +338,7 @@ const Dashboard = () => {
                                   if (next) await updateOrderStatus(o.id, next);
                                 }
                               }}
-                              className="flex-1 py-2 rounded-lg bg-gold text-primary-foreground font-medium text-xs hover:opacity-90 transition-opacity"
+                              className="flex-1 min-w-0 py-2 rounded-lg bg-gold text-primary-foreground font-medium text-xs hover:opacity-90 transition-opacity text-center"
                             >
                               → {statusConfig[nextStatus(worstOrder.status) || 'paid'].label}
                             </button>
@@ -322,17 +366,17 @@ const Dashboard = () => {
                               }
                             }}
                             disabled={printingTable === tableNum || !isConnected}
-                            className="py-2 px-3 rounded-lg border border-gold/40 text-gold text-xs hover:bg-gold/10 transition-colors disabled:opacity-30"
+                            className="py-2 px-2.5 sm:px-3 rounded-lg border border-gold/40 text-gold text-xs hover:bg-gold/10 transition-colors disabled:opacity-30"
                             title="Imprimir comanda"
                           >
                             {printingTable === tableNum ? '...' : <Printer size={12} />}
                           </button>
                           <button
                             onClick={() => setInvoiceOrder(invoiceForTable)}
-                            className="py-2 px-3 rounded-lg border border-gold/40 text-gold text-xs hover:bg-gold/10 transition-colors flex items-center gap-1"
+                            className="py-2 px-2.5 sm:px-3 rounded-lg border border-gold/40 text-gold text-xs hover:bg-gold/10 transition-colors flex items-center gap-1"
                           >
                             <FileText size={12} />
-                            Factura
+                            <span className="hidden sm:inline">Factura</span>
                           </button>
                           {hasCall && (
                             <button

@@ -12,7 +12,21 @@ export interface DbMenuItem {
   image_url: string | null;
   available: boolean;
   sort_order: number;
+  tags: string[];
 }
+
+const TAG_LABELS: Record<string, string> = {
+  'signature': '⭐ Signature',
+  'premium': '💎 Premium',
+  'popular': '🔥 Popular',
+  'sin alcohol': '🌿 Sin Alcohol',
+  'champagne': '🥂 Champagne',
+  'whisky': '🥃 Whisky',
+  'wine': '🍷 Vino',
+};
+
+export const tagOptions = Object.keys(TAG_LABELS);
+export const getTagLabel = (tag: string) => TAG_LABELS[tag] || tag;
 
 const toMenuItem = (db: DbMenuItem): MenuItem => ({
   id: db.id,
@@ -22,6 +36,7 @@ const toMenuItem = (db: DbMenuItem): MenuItem => ({
   category: db.category,
   image: db.image_url ?? undefined,
   image_url: db.image_url,
+  tags: db.tags || [],
 });
 
 export const useMenuItems = () => {
