@@ -55,7 +55,7 @@ const Index = () => {
             style={{
               backgroundColor: '#7c9786',
               backgroundImage: `url(${savoyLogo})`,
-              backgroundSize: '290%',
+              backgroundSize: '170%',
               backgroundPosition: 'center',
             }}
             role="img"
