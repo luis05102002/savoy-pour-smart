@@ -38,14 +38,21 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET' || url.host.includes('supabase')) return;
 
   // For navigation requests: network-first
-  // Never cache authenticated pages (dashboard, login) — stale auth pages are a security risk
+  // NEVER cache authenticated pages — stale auth pages are a security risk
   if (request.mode === 'navigate') {
     const pathname = url.pathname;
-    const isAuthPage = pathname.startsWith('/dashboard') || pathname.startsWith('/login') || pathname.startsWith('/admin');
-    if (isAuthPage) {
-      event.respondWith(fetch(request).catch(() => caches.match('/')));
+    const isAuthRoute = pathname.startsWith('/dashboard') || 
+                        pathname.startsWith('/login') || 
+                        pathname.startsWith('/qr') ||
+                        pathname.startsWith('/admin');
+    
+    if (isAuthRoute) {
+      // Network-only for auth routes — never cache
+      event.respondWith(fetch(request));
       return;
     }
+    
+    // Public pages: network-first with cache fallback
     event.respondWith(
       fetch(request)
         .then((response) => {
