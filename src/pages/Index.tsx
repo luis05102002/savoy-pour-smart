@@ -49,20 +49,18 @@ const Index = () => {
           transition={{ duration: 0.8, delay: 0.3 }}
           className="text-center"
         >
-          {/* Contenedor cuadrado con el mismo teal del logo — rellena las esquinas transparentes */}
           <div
             onClick={handleLogoTap}
-            className="w-44 h-44 md:w-56 md:h-56 mx-auto rounded-[22%] overflow-hidden cursor-default select-none flex items-center justify-center"
-            style={{ backgroundColor: '#7c9786' }}
-          >
-            <img
-              src={savoyLogo}
-              alt="Savoy by PG"
-              className="w-full h-full object-cover"
-              width={512}
-              height={512}
-            />
-          </div>
+            className="w-44 h-44 md:w-56 md:h-56 mx-auto rounded-[22%] overflow-hidden cursor-default select-none"
+            style={{
+              backgroundColor: '#7c9786',
+              backgroundImage: `url(${savoyLogo})`,
+              backgroundSize: '290%',
+              backgroundPosition: 'center',
+            }}
+            role="img"
+            aria-label="Savoy by PG"
+          />
 
           <motion.div
             initial={{ opacity: 0 }}
