@@ -53,7 +53,7 @@ const Index = () => {
           <div
             onClick={handleLogoTap}
             className="w-44 h-44 md:w-56 md:h-56 mx-auto rounded-[22%] overflow-hidden cursor-default select-none flex items-center justify-center"
-            style={{ backgroundColor: 'hsl(160 22% 52%)' }}
+            style={{ backgroundColor: '#7c9786' }}
           >
             <img
               src={savoyLogo}
