@@ -82,11 +82,21 @@ export const useThermalPrinter = () => {
             filters: [
               { namePrefix: 'Printer' },
               { namePrefix: 'POS' },
-              { services: ['000018f0-0000-1000-8000-00805f9b34fb'] }, // Servicio de impresora
+              { namePrefix: 'RPP' },
+              { namePrefix: 'MTP' },
+              { services: ['000018f0-0000-1000-8000-00805f9b34fb'] },
             ],
             optionalServices: ['device_information'],
           });
-          
+
+          // Validate device name to prevent connecting to non-printer devices
+          const deviceName = (device.name || '').toLowerCase();
+          const isPrinterDevice = ['printer', 'pos', 'rpp', 'mtp', 'thermal', 'receipt'].some(k => deviceName.includes(k));
+          if (!isPrinterDevice && device.name) {
+            toast.error(`Dispositivo "${device.name}" no reconocido como impresora`);
+            return false;
+          }
+
           bluetoothDeviceRef.current = device;
           setPrinterType('bluetooth');
           setIsConnected(true);

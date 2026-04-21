@@ -62,6 +62,7 @@ function sanitize(str: string): string {
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^[+]?[\d\s\-()]{6,20}$/;
+const MIN_PHONE_DIGITS = 6; // Spanish mobile: 9 digits minimum
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -103,9 +104,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!body.customer_phone || !PHONE_REGEX.test(body.customer_phone)) {
+    const phoneDigits = (body.customer_phone?.match(/\d/g) || []).length;
+    if (!body.customer_phone || !PHONE_REGEX.test(body.customer_phone) || phoneDigits < MIN_PHONE_DIGITS) {
       return new Response(
-        JSON.stringify({ error: "Teléfono inválido" }),
+        JSON.stringify({ error: "Teléfono inválido (mínimo 6 dígitos)" }),
         { status: 400, headers: { ...responseHeaders, "Content-Type": "application/json" } }
       );
     }

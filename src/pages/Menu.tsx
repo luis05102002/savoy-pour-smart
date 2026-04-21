@@ -39,6 +39,7 @@ const Menu = () => {
 
   const handleQRScan = (mesa: number) => {
     setShowScanner(false);
+    if (!Number.isInteger(mesa) || mesa < 1 || mesa > 200) return;
     setTableNumber(mesa);
     navigate(`/menu?mesa=${mesa}`, { replace: true });
   };
